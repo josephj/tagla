@@ -1,0 +1,17 @@
+{
+  "name": "tagla",
+  "version": "0.0.1",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "josephj6802@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "coffee-script": "^1.8.0",
+    "gulp": "^3.8.10",
+    "gulp-connect": "^2.2.0",
+    "gulp-sass": "^1.1.0",
+    "gulp-watch": "^1.2.0",
+    "gulp-open": "^0.3.2"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "tagla",
+  "main": "src/tagla.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/josephj/tagla",
+  "authors": [
+    "josephj <josephj6802@gmail.com>"
+  ],
+  "description": "A JavaScript photo tagging utility which allows you to make multiple tags.",
+  "keywords": [
+    "tagging",
+    "drag drop",
+    "photo"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "1.11.0",
+    "draggabilly": "~1.1.1"
+  },
+  "devDependencies": {
+    "HTML5-Reset": "~2.1.2"
+  }
+}
