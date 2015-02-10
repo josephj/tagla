@@ -1,0 +1,51 @@
+{
+  "checksum": {
+    "previous": "1f6b3d0f53b619477b53ebc8c7ab28c7325e7b029886ada73ecee8241e14b2d9",
+    "current": "1f6b3d0f53b619477b53ebc8c7ab28c7325e7b029886ada73ecee8241e14b2d9"
+  },
+  "fonts": [
+    "src/fontcustom/_font_stackla.ttf",
+    "src/fontcustom/_font_stackla.svg",
+    "src/fontcustom/_font_stackla.woff",
+    "src/fontcustom/_font_stackla.eot"
+  ],
+  "glyphs": {
+    "tag": {
+      "codepoint": 61696,
+      "source": "src/svg/tag.svg"
+    }
+  },
+  "options": {
+    "autowidth": false,
+    "base64": true,
+    "config": "fontcustom.yml",
+    "css_selector": ".fs.fs-{{glyph}}",
+    "debug": true,
+    "font_ascent": 448,
+    "font_descent": 64,
+    "font_design_size": 16,
+    "font_em": 512,
+    "font_name": "_font_stackla",
+    "force": false,
+    "input": {
+      "templates": "src/svg",
+      "vectors": "src/svg"
+    },
+    "no_hash": true,
+    "output": {
+      "css": "src/fontcustom",
+      "fonts": "src/fontcustom",
+      "preview": "src/fontcustom"
+    },
+    "preprocessor_path": null,
+    "quiet": false,
+    "templates": [
+      "css",
+      "preview"
+    ]
+  },
+  "templates": [
+    "src/fontcustom/_font_stackla.css",
+    "src/fontcustom/_font_stackla-preview.html"
+  ]
+}

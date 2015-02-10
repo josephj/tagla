@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>tagla</title>
 <link rel="stylesheet" href="../../vendor/HTML5-Reset/assets/css/reset.css" />
-<link rel="stylesheet" href="../../src/tagla-core.css" />
-<link rel="stylesheet" href="../../src/tagla-theme-stackla.css" />
+<link rel="stylesheet" href="../../dist/tagla-core.css" />
+<link rel="stylesheet" href="../../dist/tagla-theme-stackla.css" />
 <style>
 #container {
 
@@ -15,12 +15,13 @@
 <body>
     <h1>tagla</h1>
     <div class="container">
-        <img src="parrots.jpg" width="640" height="640" alt="Sulphur Crested Cockatoos" />
+        <img src="parrots.jpg" width="540" height="540" alt="Sulphur Crested Cockatoos" />
     </div>
     <button class="add-tag">Add Tag</button>
     <script src="../../vendor/jquery/dist/jquery.min.js"></script>
     <script src="../../vendor/draggabilly/dist/draggabilly.pkgd.min.js"></script>
-    <script src="../../src/tagla.js"></script>
+    <script src="../../vendor/mustache.js/mustache.min.js"></script>
+    <script src="../../dist/tagla.js"></script>
     <script>
     (function () {
         var $container,
@@ -30,9 +31,9 @@
         tagla = new Tagla($container, {
             editor: false,
             data: [
-                [10, 30],
-                [30, 10]
-                [50, 90]
+                {x: 10, y: 30, label: 'Frankie Issue #6'},
+                {x: 30, y: 10, label: 'Frankie Wall Calendar 2015'},
+                {x: 50, y: 90, label: 'Frankie A5 Daily Planner'}
             ],
             unit: 'percent',
             handlers: {
@@ -46,7 +47,7 @@
                     console.log('mouseleave');
                 }
             }
-        });
+        }).render();
 
         $('.add-tag').on('click', function (e) {
              console.log('Add tag being clicked');

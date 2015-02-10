@@ -1,9 +1,9 @@
 # Constants
-CSS_PATH        = './src/*.css'
-JS_PATH         = './src/*.js'
-SASS_PATH       = './src/*.sass'
-COFFEE_PATH     = './src/*.coffee'
-OUTPUT_PATH     = './src/'
+CSS_PATH        = './dist/*.css'
+JS_PATH         = './dist/*.js'
+SASS_PATH       = './src/sass/*.sass'
+COFFEE_PATH     = './src/coffee/*.coffee'
+OUTPUT_PATH     = './dist/'
 HTML_PATH       = './tests/manual/*.html'
 HTTP_PORT       = 3333
 LIVERELOAD_PORT = 32717
@@ -28,7 +28,7 @@ gulp.task 'connect', ->
 # Task - open
 gulp.task 'open', ->
   gulp.src './tests/manual/demo.html'
-    .pipe open('', url: "http://0.0.0.0:#{HTTP_PORT}/tests/manual/demo.html")
+    .pipe open('', url: "http://localhost:#{HTTP_PORT}/tests/manual/demo.html")
 
 # Task - watch
 gulp.task 'watch', ->

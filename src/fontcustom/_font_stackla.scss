@@ -1,0 +1,46 @@
+/*
+  Icon Font: _font_stackla
+*/
+
+@font-face {
+  font-family: "_font_stackla";
+  src: url("./_font_stackla.eot?") format("embedded-opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "_font_stackla";
+  src: url("data:application/x-font-woff;charset=utf-8;base64,d09GRgABAAAAAATwAA0AAAAABywAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABGRlRNAAAE1AAAABsAAAAcbjymWU9TLzIAAAGgAAAASQAAAGBQKV2JY21hcAAAAgAAAABGAAABSuH0Ff9jdnQgAAACSAAAAAQAAAAEABEBRGdhc3AAAATMAAAACAAAAAj//wADZ2x5ZgAAAlgAAADgAAAA6Dipb6doZWFkAAABMAAAAC8AAAA2Av1D/WhoZWEAAAFgAAAAHQAAACQDiAH3aG10eAAAAewAAAAUAAAAFAQtAEdsb2NhAAACTAAAAAwAAAAMAFQAyG1heHAAAAGAAAAAHwAAACAASQBhbmFtZQAAAzgAAAFpAAACxAIpp5Vwb3N0AAAEpAAAACUAAAA0TXGftnjaY2BkYGAAYp1q3qp4fpuvDNxMDCBw4X/jUTgt+P8j4znGViCXgwEsDQA+2AxnAHjaY2BkYGDs+v+RQY+JAQQYzzEwMqACVgBezgOCAAAAeNpjYGRgYGBlMGBgYgABEMnIABJzYNADCQAACIQAqwB42mNgYUxh/MLAysDA6MOYxsDA4A6lvzJIMrQwMDAxsDEzwACjAAMCBKS5pjAcYFD4yMB44P8BBj3GVgZ+kBokJQoMjAA1gAtWAAAAALsAEQAAAAAAqgAAAMgAAAIAADZ42mNgYGBmgGAZBkYGEHAB8hjBfBYGDSDNBqQZGZgYFD4y/P8P5IPp/4/5WaDqgYCRjQHOYWQCEkwMqIARYsVwBgDEZgjmAAAAEQFEAAAAKgAqACoAKgB0eNoVjL1SwkAURu9lfy4YCOwaNmMAhWRm10JhIBCbjD4FjyCv4BPo2FvZ2lolNc/ADL2vYGHPqJvufOfMfNACBQDvuAUGBPMKYVHWxOF7VUnxVdas5REq1mjR6JoknsoaG5+rXLlcZer1abfD7e+nwty/IRR/P3jAZ1j4EZN7QBPL2Kzu0VlnhsthFmWp3aznzFnyISbr7F3hAdX+bZ+EA0EB6R6SkAzbTCAFF+rKnEu65cVZZzy5TjU+Hj+OL8xMB10Ko7ZA3eFEnHcvkzH1omg0C3R4Y5OJ7qfwD6Z8Jt942pWPv07DMBDGP/efAFEEayeP7dDUidSla0QHJBaGrlHaOk3UklSJq6qvgJB4ECR2XoOVV0A8AQNfUqtSB5Bqy3e/O3++OwO4whsE9usWz5YF2vi2XENLXFiuoye05Qba4tVyE9fi03IL7doZlaJxzuipelWyQAcflmu4xI/lOh7EjeUGOuLFchNSvFtuMf8FHzk0QhjaOSSm2NHeIUPBzBoxI582oSbFgtGWbKr8mKqUXPqcd5o5Dw4UfZcKw73GCAPuyGqjg9Zhh4g2JRv0AD/XodFzOd3Ju6zQ61j6cRKmC7lNTCzHWWrGWb7Q0nOU7MbGrEeDQcRsVGadInJSbVgmOPQK2MFw7hmWWNEjKOVBYcLZcsXwvvpzgg0eGeh5sqH/71Mjnr/L7+9dKvt8UR7FaMiSR6OP5NEYjF3V9/qecoenDD/hZDk1SaWX7FV2cypfzoqJzoskS6VSrqOUkicU/wUaLoECAAAAeNpjYGIAg/8HGCQZsAFWIGZkYGJgZmRiL83LdDM0MAAAW7sEEwAAAAAAAAH//wACeNpjYGBgZACCM7aLzoPoC/8bj0DpowBWdgilAA==") format("woff"),
+       url("./_font_stackla.ttf") format("truetype"),
+       url("./_font_stackla.svg#_font_stackla") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: "_font_stackla";
+    src: url("./_font_stackla.svg#_font_stackla") format("svg");
+  }
+}
+
+[data-icon]:before { content: attr(data-icon); }
+
+[data-icon]:before,
+.fs.fs-tag:before {
+  display: inline-block;
+  font-family: "_font_stackla";
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  line-height: 1;
+  text-decoration: inherit;
+  text-rendering: optimizeLegibility;
+  text-transform: none;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+}
+
+.fs.fs-tag:before { content: "\f100"; }

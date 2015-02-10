@@ -21,7 +21,8 @@
   ],
   "dependencies": {
     "jquery": "1.11.0",
-    "draggabilly": "~1.1.1"
+    "draggabilly": "~1.1.1",
+    "mustache.js": "https://github.com/janl/mustache.js.git#1.0.0"
   },
   "devDependencies": {
     "HTML5-Reset": "~2.1.2"
