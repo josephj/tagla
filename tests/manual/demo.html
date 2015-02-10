@@ -17,12 +17,41 @@
     <div class="container">
         <img src="parrots.jpg" width="640" height="640" alt="Sulphur Crested Cockatoos" />
     </div>
+    <button class="add-tag">Add Tag</button>
     <script src="../../vendor/jquery/dist/jquery.min.js"></script>
     <script src="../../vendor/draggabilly/dist/draggabilly.pkgd.min.js"></script>
     <script src="../../src/tagla.js"></script>
     <script>
     (function () {
-        console.log('it is working');
+        var $container,
+            tagla;
+
+        $container = $('.container');
+        tagla = new Tagla($container, {
+            editor: false,
+            data: [
+                [10, 30],
+                [30, 10]
+                [50, 90]
+            ],
+            unit: 'percent',
+            handlers: {
+                'click': function () {
+                    console.log('click');
+                },
+                'mouseenter': function () {
+                    console.log('mouseenter');
+                },
+                'mouseleave': function () {
+                    console.log('mouseleave');
+                }
+            }
+        });
+
+        $('.add-tag').on('click', function (e) {
+             console.log('Add tag being clicked');
+        });
+
     }());
     </script>
 </body>
