@@ -11,7 +11,7 @@ LIVERELOAD_PORT = 32717
 # Gulp plugins
 gulp       = require 'gulp'
 connect    = require 'gulp-connect'
-sass       = require 'gulp-sass'
+sass       = require 'gulp-ruby-sass'
 watch      = require 'gulp-watch'
 open       = require 'gulp-open'
 coffee     = require 'gulp-coffee'
@@ -19,26 +19,23 @@ sourcemaps = require 'gulp-sourcemaps'
 
 # Task - connect
 gulp.task 'connect', ->
-    connect.server
-      root: ['.']
-      port: HTTP_PORT
-      livereload:
-        port: LIVERELOAD_PORT
+  connect.server
+    root: ['.']
+    port: HTTP_PORT
+    livereload:
+      port: LIVERELOAD_PORT
 
+# Task - open
 gulp.task 'open', ->
-    gulp.src './tests/manual/demo.html'
-        .pipe open('', url: "http://localhost:#{HTTP_PORT}/tests/manual/demo.html")
+  gulp.src './tests/manual/demo.html'
+    .pipe open('', url: "http://localhost:#{HTTP_PORT}/tests/manual/demo.html")
 
 # Task - watch
 gulp.task 'watch', ->
 
   gulp.src SASS_PATH
     .pipe watch(SASS_PATH)
-    .pipe sourcemaps.init()
-    .pipe sass
-       errLogToConsole: true
-       sourceComments : 'normal'
-    .pipe sourcemaps.write()
+    .pipe sass(sourcemap: true)
     .pipe gulp.dest(OUTPUT_PATH)
 
   gulp.src COFFEE_PATH
@@ -46,7 +43,7 @@ gulp.task 'watch', ->
     .pipe sourcemaps.init()
     .pipe coffee()
     .pipe sourcemaps.write()
-    .pipe connect.reload()
+    .pipe gulp.dest(OUTPUT_PATH)
 
   gulp.src [HTML_PATH, CSS_PATH, JS_PATH]
     .pipe watch([HTML_PATH, CSS_PATH, JS_PATH])
