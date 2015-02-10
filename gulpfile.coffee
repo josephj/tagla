@@ -11,7 +11,7 @@ LIVERELOAD_PORT = 32717
 # Gulp plugins
 gulp       = require 'gulp'
 connect    = require 'gulp-connect'
-sass       = require 'gulp-ruby-sass'
+sass       = require 'gulp-sass'
 watch      = require 'gulp-watch'
 open       = require 'gulp-open'
 coffee     = require 'gulp-coffee'
@@ -28,14 +28,17 @@ gulp.task 'connect', ->
 # Task - open
 gulp.task 'open', ->
   gulp.src './tests/manual/demo.html'
-    .pipe open('', url: "http://localhost:#{HTTP_PORT}/tests/manual/demo.html")
+    .pipe open('', url: "http://0.0.0.0:#{HTTP_PORT}/tests/manual/demo.html")
 
 # Task - watch
 gulp.task 'watch', ->
 
   gulp.src SASS_PATH
     .pipe watch(SASS_PATH)
-    .pipe sass(sourcemap: true)
+    .pipe sourcemaps.init()
+    .pipe sass
+      indentedSyntax: true
+    .pipe sourcemaps.write()
     .pipe gulp.dest(OUTPUT_PATH)
 
   gulp.src COFFEE_PATH
