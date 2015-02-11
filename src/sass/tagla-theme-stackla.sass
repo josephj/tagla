@@ -32,9 +32,16 @@
     top: 0
     z-index: -1
   &.tagla-tag-active
+    background-color: rgba(#f5e96f, 0.6)
+    &:before
+      border: solid 1px rgba(#000, 0.2)
+    box-shadow: 1px 1px 5px rgba(black, 0.5)
     overflow: visible
     cursor: move
     z-index: 2
+    .tagla-icon
+      &:before
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8)
   // Link
   .tagla-tag-link
     text-decoration: none
