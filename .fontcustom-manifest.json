@@ -1,7 +1,7 @@
 {
   "checksum": {
-    "previous": "1f6b3d0f53b619477b53ebc8c7ab28c7325e7b029886ada73ecee8241e14b2d9",
-    "current": "1f6b3d0f53b619477b53ebc8c7ab28c7325e7b029886ada73ecee8241e14b2d9"
+    "previous": "b74033abbec73bc23748f1110d0fea074e07fe374522ca1cdb13c53e9c4d8244",
+    "current": "b74033abbec73bc23748f1110d0fea074e07fe374522ca1cdb13c53e9c4d8244"
   },
   "fonts": [
     "src/fontcustom/_font_stackla.ttf",
@@ -10,6 +10,18 @@
     "src/fontcustom/_font_stackla.eot"
   ],
   "glyphs": {
+    "cart": {
+      "codepoint": 61697,
+      "source": "src/svg/cart.svg"
+    },
+    "cross3": {
+      "codepoint": 61698,
+      "source": "src/svg/cross3.svg"
+    },
+    "pencil": {
+      "codepoint": 61699,
+      "source": "src/svg/pencil.svg"
+    },
     "tag": {
       "codepoint": 61696,
       "source": "src/svg/tag.svg"

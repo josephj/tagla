@@ -23,9 +23,40 @@ Tagla.FORM_TEMPLATE = [
   '</form>'
 ].join('\n')
 Tagla.TAG_TEMPLATE = [
-  '<span class="tagla-tag">'
-  '    <i class="fs fs-tag"><i>'
-  '</span>'
+  '<div class="tagla-tag">'
+  '    <i class="tagla-icon fs fs-tag"></i>'
+  '    <span class="tagla-label">'
+  '      {{label}}'
+  '      <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-edit-link">'
+  '        <i class="fs fs-pencil"></i> Edit'
+  '      </a>'
+  '      <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-delete-link">'
+  '        <i class="fs fs-cross3"></i> Delete'
+  '      </a>'
+  '    </span>'
+  '    <div class="tagla-dialog">'
+  '        {{#image}}'
+  '        <div class="tagla-dialog-image">'
+  '          <img src="{{image}}">'
+  '        </div>'
+  '        {{/image}}'
+  '        <div class="tagla-dialog-text">'
+  '          <h2 class="tagla-dialog-title">{{label}}</h2>'
+  '          <div class="tagla-dialog-price">{{price}}</div>'
+  '          <p class="tagla-dialog-description">{{description}}</p>'
+  '          <a href="{{url}}" class="tagla-dialog-button st-btn st-btn-success st-btn-solid">'
+  '            <i class="fs fs-cart"></i>'
+  '            Buy Now'
+  '          </a>'
+  '        </div>'
+  '    </div>'
+  '</div>'
+].join('\n')
+Tagla.NEW_TAG_TEMPLATE = [
+  '<div class="tagla-tag">'
+  '    <i class="tagla-icon fs fs-tag"></i>'
+  '    <span class="tagla-label">{{label}}</span>'
+  '</div>'
 ].join('\n')
 
 proto =
@@ -47,9 +78,11 @@ proto =
 
     offsetX = @formatFloat($tag.outerWidth() / 2 / @wrapper.width() * 100, 2)
     offsetY = @formatFloat($tag.outerHeight() / 2 / @wrapper.height() * 100, 2)
-    $tag.css
-      left: "#{tag.x - offsetX}%"
-      top: "#{tag.y - offsetY}%"
+    setTimeout ->
+      $tag.css
+        left: "#{tag.x - offsetX}%"
+        top: "#{tag.y - offsetY}%"
+      , 500
 
   updateImageSize: ->
     @log 'updateImageSize() is executed'
@@ -75,11 +108,62 @@ proto =
     @updateImageSize()
     @render()
 
+  handleTagDelete: (e) ->
+    @log 'handleTagDelete() is executed'
+    e.preventDefault()
+    $tag = $(e.currentTarget).parents('.tagla-tag')
+    $tag.remove()
+    instance = $tag.data('tagla-instance')
+    instance.destroy() if (instance)
+
   handleWindowResize: (e) ->
     @log 'handleImageResize() is executed'
     image = @image[0]
     return if image.width is @currentWidth and image.height is @currentHeight
     @updateImageSize()
+
+  ####################
+  # Public Methods
+  ####################
+  edit: ->
+    return if @editor is on
+    @log 'edit() is executed'
+    @wrapper.addClass('tagla-editing')
+    $('.tagla-tag').each ->
+      instance = $(@).data('tagla-instance')
+      if instance
+        instance.enable()
+      else
+        instance = new Draggabilly(@, {containment: '.tagla'})
+        $(@).data('tagla-instance', instance)
+
+    @editor = on
+
+  unedit: ->
+    return if @edit is off
+    @log 'unedit() is executed'
+    @wrapper.find('.tagla-tag').each ->
+      instance = $(@).data('tagla-instance')
+      instance.disable()
+    @wrapper.removeClass('tagla-editing')
+    @editor = off
+
+  addTag: ->
+    return unless @editor # Only for editor mode
+    @log 'addTag() is executed'
+    $tag = $(Mustache.render(Tagla.NEW_TAG_TEMPLATE, tag))
+    @wrapper.append($tag)
+    tag = x: 50, y: 50
+    offsetX = @formatFloat($tag.outerWidth() / 2 / @wrapper.width() * 100, 2)
+    offsetY = @formatFloat($tag.outerHeight() / 2 / @wrapper.height() * 100, 2)
+    $tag.css
+      left: "#{tag.x - offsetX}%"
+      top: "#{tag.y - offsetY}%"
+    instance = new Draggabilly($tag[0], {containment: '.tagla'})
+    $(@).data('tagla-instance', instance)
+
+  deleteTag: (e) ->
+
 
   ####################
   # Lifecycle Methods
@@ -99,6 +183,9 @@ proto =
 
   bind: ->
     @log 'bind() is executed'
+    @wrapper.on 'mouseenter', $.proxy(@handleMouseEnter, @)
+    @wrapper.on 'mouseenter', $.proxy(@handleMouseEnter, @)
+    @wrapper.on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
     $(window).on 'resize', $.proxy(@handleWindowResize, @)
 
   render: ->
@@ -114,6 +201,7 @@ proto =
     @log 'render() is executed'
     @appendTag tag for tag in @data
     @wrapper.addClass 'tagla'
+
 
   destroy: ->
     @log 'destroy() is executed'

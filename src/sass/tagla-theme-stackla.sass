@@ -1,16 +1,25 @@
 @import '../fontcustom/font_stackla'
 
+.tagla
+  user-select: none
+
 .tagla-tag
   background-color: rgba(#669933, 0.5)
   position: absolute
-  border-radius: 50px
-  left: 0
-  top: 0;
+  border-radius: 48px
+  left: -96px
+  top: auto
   width: 48px
   height: 48px
+  overflow: hidden
   border: dashed 1px #fff
+  transition: all 0.5s
   text-align: center
   vertical-align: middle
+  z-index: 0
+  &:hover
+    overflow: visible
+    z-index: 1
   &:before
     border: dotted 1px #316500
     border-radius: 48px
@@ -21,10 +30,100 @@
     right: 0
     bottom: 0
     top: 0
-  i
-    color: #fff
-    font-size: 28px
-    line-height: 55px
-    &:before
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5)
+  // Link
+  .tagla-tag-link
+    text-decoration: none
+    color: #333
+    font-weight: normal
+    display: inline-block
+    padding: 0 5px
+    &.tagla-tag-edit-link
+      color: #693
+    &.tagla-tag-delete-link
+      color: #d14835
 
+  // Editing Mode
+  .tagla-editing &
+    transition: none
+    z-index: 1
+    cursor: move
+
+.tagla-icon
+  color: #fff
+  font-size: 30px
+  line-height: 48px
+  &:before
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5)
+
+.tagla-label
+  background: rgba(white, 0.92)
+  opacity: 0
+  cursor: default
+  color: #333
+  padding: 14px 20px
+  border-radius: 4px
+  box-shadow: 1px 1px 2px rgba(black, 0.1)
+  white-space: nowrap
+  margin-left: 2px
+  display: inline-block
+  position: absolute
+  left: 100%
+  font-weight: bold
+  transition: all 0.5s
+  // Editing Mode
+  .tagla-editing .tagla-tag:hover &
+    opacity: 0.9
+
+//=========
+// Dialog
+//=========
+.tagla-dialog
+  background: #fff
+  opacity: 0
+  color: #333
+  box-shadow: 1px 1px 2px rgba(black, 0.6)
+  margin-top: 3px
+  display: block
+  padding: 20px 19px
+  position: absolute
+  text-align: left
+  left: 0
+  top: 100%
+  font-weight: bold
+  width: 480px
+  transition: all 0.5s
+  .tagla-tag:hover &
+    opacity: 1
+  // Editing Mode
+  .tagla-editing &
+    display: none
+
+.tagla-dialog-image
+  max-width: 220px
+  float: left
+  margin-right: 17px
+
+.tagla-dialog-text
+  display: table
+
+.tagla-dialog-title
+  font-size: 18px
+  margin: 12px 0
+
+.tagla-dialog-price
+  font-size: 16px
+
+.tagla-dialog-description
+  margin: 12px 0
+  font-size: 12px
+
+.tagla-dialog-button
+  position: static
+  display: inline-block
+  background: #659a2a
+  border-radius: 3px
+  color: #fff
+  font-style: normal
+  font-weight: bold
+  padding: 15px 20px
+  text-decoration: none
