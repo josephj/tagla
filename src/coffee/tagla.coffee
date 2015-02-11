@@ -1,4 +1,3 @@
-
 class Tagla
   constructor: ($wrapper, options = {}) ->
     @wrapper = $($wrapper)
@@ -8,18 +7,14 @@ class Tagla
 Tagla.NAME = 'Tagla'
 Tagla.PREFIX = 'tagla-'
 Tagla.FORM_TEMPLATE = [
-  '<form class="photo-tags-form photo-tags-form-hide">'
-  '     <input type="hidden" name="x">'
-  '     <input type="hidden" name="y">'
-  '     <label class="photo-tags-form-label">'
-  '         <select data-placeholder="Choose tags..." type="text" name="label" class="tagla-form-input chosen-select">'
-  '             <option>Frankie Issue #6</option>'
-  '             <option>Frankie Wall Calendar 2015</option>'
-  '             <option>Frankie A5 Daily Planner</option>'
-  '         </select>'
-  '     </label>'
-  '     <button type="submit" class="photo-tags-form-button">Save</button>'
-  '     <button type="reset" class="photo-tags-form-button">Cancel</button>'
+  '<form class="tagla-form">'
+  '    <input type="hidden" name="x">'
+  '    <input type="hidden" name="y">'
+  '    <select data-placeholder="Choose tags..." type="text" name="label" class="tagla-select chosen-select">'
+  '        <option>Frankie Issue #6</option>'
+  '        <option>Frankie Wall Calendar 2015</option>'
+  '        <option>Frankie A5 Daily Planner</option>'
+  '    </select>'
   '</form>'
 ].join('\n')
 Tagla.TAG_TEMPLATE = [
@@ -50,6 +45,7 @@ Tagla.TAG_TEMPLATE = [
   '          </a>'
   '        </div>'
   '    </div>'
+  "    #{Tagla.FORM_TEMPLATE}"
   '</div>'
 ].join('\n')
 Tagla.NEW_TAG_TEMPLATE = [
@@ -58,6 +54,9 @@ Tagla.NEW_TAG_TEMPLATE = [
   '    <span class="tagla-label">{{label}}</span>'
   '</div>'
 ].join('\n')
+Tagla.DRAG_ATTR =
+  containment: '.tagla'
+  handle: '.tagla-icon'
 
 proto =
   ##############
@@ -76,13 +75,17 @@ proto =
     $tag = $(Mustache.render(@tagTemplate, tag))
     @wrapper.append($tag)
 
-    offsetX = @formatFloat($tag.outerWidth() / 2 / @wrapper.width() * 100, 2)
-    offsetY = @formatFloat($tag.outerHeight() / 2 / @wrapper.height() * 100, 2)
+    x = @wrapper.width() * (tag.x / 100)
+    y = @wrapper.height() * (tag.y / 100)
+    offsetX = $tag.outerWidth() / 2
+    offsetY = $tag.outerHeight() / 2
+    console.log(x, y, offsetX, offsetY)
     setTimeout ->
       $tag.css
-        left: "#{tag.x - offsetX}%"
-        top: "#{tag.y - offsetY}%"
+        left: "#{x - offsetX}px"
+        top: "#{y - offsetY}px"
       , 500
+      $tag.data('tag-data', tag)
 
   updateImageSize: ->
     @log 'updateImageSize() is executed'
@@ -108,13 +111,41 @@ proto =
     @updateImageSize()
     @render()
 
+  handleTagClick: (e) ->
+    @log 'handleTagClick() is executed'
+    e.preventDefault()
+    e.stopPropagation()
+    $tag = $(e.currentTarget)
+    $('.tagla-tag').each ->
+      $(@).removeClass('tagla-tag-active') if @ isnt $tag[0]
+      $(@).data('draggabilly').disable()
+    $tag.addClass('tagla-tag-active')
+    $tag.data('draggabilly').enable()
+
   handleTagDelete: (e) ->
     @log 'handleTagDelete() is executed'
     e.preventDefault()
     $tag = $(e.currentTarget).parents('.tagla-tag')
     $tag.remove()
-    instance = $tag.data('tagla-instance')
+    instance = $tag.data('draggabilly')
     instance.destroy() if (instance)
+    $(document).trigger('tagla:delete', $tag.data('tag-data'))
+
+  handleTagEdit: (e) ->
+    @log 'handleTagDelete() is executed'
+    e.preventDefault()
+    $tag = $(e.currentTarget).parents('.tagla-tag')
+    $tag.addClass('tagla-tag-choose')
+    $tag.find('.tagla-select').trigger('chosen:open')
+    $tag.find('.tagla-select').on 'change', (e) ->
+      $tag.removeClass('tagla-tag-choose tagla-tag-active')
+    $(document).trigger('tagla:edit', $tag.data('tag-data'))
+
+  handleWrapperClick: (e) ->
+    @log 'handleWrapperClick() is executed'
+    $('.tagla-tag').each ->
+      $(@).removeClass('tagla-tag-active')
+      $(@).data('draggabilly').disable()
 
   handleWindowResize: (e) ->
     @log 'handleImageResize() is executed'
@@ -130,20 +161,19 @@ proto =
     @log 'edit() is executed'
     @wrapper.addClass('tagla-editing')
     $('.tagla-tag').each ->
-      instance = $(@).data('tagla-instance')
+      instance = $(@).data('draggabilly')
       if instance
         instance.enable()
       else
-        instance = new Draggabilly(@, {containment: '.tagla'})
-        $(@).data('tagla-instance', instance)
-
+        instance = new Draggabilly(@, Tagla.DRAG_ATTR)
+        $(@).data('draggabilly', instance)
     @editor = on
 
   unedit: ->
     return if @edit is off
     @log 'unedit() is executed'
     @wrapper.find('.tagla-tag').each ->
-      instance = $(@).data('tagla-instance')
+      instance = $(@).data('draggabilly')
       instance.disable()
     @wrapper.removeClass('tagla-editing')
     @editor = off
@@ -159,8 +189,8 @@ proto =
     $tag.css
       left: "#{tag.x - offsetX}%"
       top: "#{tag.y - offsetY}%"
-    instance = new Draggabilly($tag[0], {containment: '.tagla'})
-    $(@).data('tagla-instance', instance)
+    instance = new Draggabilly($tag[0], Tagla.DRAG_ATTR)
+    $(@).data('draggabilly', instance)
 
   deleteTag: (e) ->
 
@@ -184,7 +214,9 @@ proto =
   bind: ->
     @log 'bind() is executed'
     @wrapper.on 'mouseenter', $.proxy(@handleMouseEnter, @)
-    @wrapper.on 'mouseenter', $.proxy(@handleMouseEnter, @)
+    @wrapper.on 'click', $.proxy(@handleWrapperClick, @)
+    @wrapper.on 'click', '.tagla-tag', $.proxy(@handleTagClick, @)
+    @wrapper.on 'click', '.tagla-tag-edit-link', $.proxy(@handleTagEdit, @)
     @wrapper.on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
     $(window).on 'resize', $.proxy(@handleWindowResize, @)
 
@@ -199,9 +231,21 @@ proto =
       return
 
     @log 'render() is executed'
-    @appendTag tag for tag in @data
     @wrapper.addClass 'tagla'
+    @appendTag tag for tag in @data
 
+    if @editor
+      @wrapper.addClass 'tagla-editing'
+      $('.tagla-tag').each ->
+        instance = $(@).data('draggabilly')
+        if instance
+          instance.enable()
+        else
+          instance = new Draggabilly(@, Tagla.DRAG_ATTR)
+          $(@).data('draggabilly', instance)
+          instance.disable()
+      @wrapper.find('.tagla-select').each ->
+        $(@).chosen()
 
   destroy: ->
     @log 'destroy() is executed'

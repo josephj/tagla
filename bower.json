@@ -22,7 +22,8 @@
   "dependencies": {
     "jquery": "1.11.0",
     "draggabilly": "~1.1.1",
-    "mustache.js": "https://github.com/janl/mustache.js.git#1.0.0"
+    "mustache.js": "https://github.com/janl/mustache.js.git#1.0.0",
+    "chosen_v1.3.0": "https://github.com/harvesthq/chosen/releases/download/v1.3.0/chosen_v1.3.0.zip"
   },
   "devDependencies": {
     "HTML5-Reset": "~2.1.2"
