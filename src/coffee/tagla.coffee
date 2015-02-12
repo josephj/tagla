@@ -1,4 +1,4 @@
-class Tagla
+class Tagla extends Stackla.Base
   constructor: ($wrapper, options = {}) ->
     @wrapper = $($wrapper)
     @init(options)
@@ -65,50 +65,29 @@ proto =
   ##############
   # Utilities
   ##############
-  log: (msg, type = 'info') ->
-    return if !@debug or !window.console or !window.console[type]
-    window.console[type] "[#{Tagla.NAME}] #{msg}"
-
   formatFloat: (num, pos) ->
     size = Math.pow(10, pos)
     Math.round(num * size) / size
+  toString: -> 'Tagla'
 
   ##################
   # Private Methods
   ##################
   # Initialize drag and select libs for a single tag
-  _setTools: ($tag) ->
+  _applyTools: ($tag) ->
     drag = new Draggabilly($tag[0], Tagla.DRAG_ATTR)
     drag.disable()
     $tag.data('draggabilly', drag)
     $tag.find('.tagla-select').chosen(Tagla.SELECT_ATTR)
+  _removeTools: ($tag) ->
+    $tag.data('draggabilly').destroy()
+    $select = $tag.find('.tagla-select')
+    $select.show().removeClass 'chzn-done'
+    $select.next().remove()
 
   ##################
   # Public Mehtods
   ##################
-  appendTag: (tag) ->
-    @log 'appendTag() is executed'
-    # Render tag element by provided template
-    $tag = $(Mustache.render(@tagTemplate, tag))
-    @wrapper.append($tag)
-    # Default position for new tag
-    tag.x = tag.x || 50
-    tag.y = tag.y || 50
-    # Make offset so the position could be center point of icon
-    # TODO - Current convert percent to pixel, should allow user to
-    #        define the unit instead of hard code it
-    x = @wrapper.width() * (tag.x / 100)
-    y = @wrapper.height() * (tag.y / 100)
-    offsetX = $tag.outerWidth() / 2
-    offsetY = $tag.outerHeight() / 2
-    $tag.css
-      left: "#{x - offsetX}px"
-      top: "#{y - offsetY}px"
-    # Save tag data to data attr for easy access
-    $tag.data('tag-data', tag)
-    # Render tag editor tools
-    @_setTools($tag) if @editor
-
   updateImageSize: ->
     @log 'updateImageSize() is executed'
     image = @image[0]
@@ -176,50 +155,58 @@ proto =
     @log 'handleImageResize() is executed'
     image = @image[0]
     return if image.width is @currentWidth and image.height is @currentHeight
+    $('.tagla-tag').each (i, el) =>
+      $tag = $(el)
+      pos = $tag.position()
+      x = (pos.left / @currentWidth) * @image.width()
+      y = (pos.top / @currentHeight) * @image.height()
+      $tag.css
+        left: "#{x}px"
+        top: "#{y}px"
     @updateImageSize()
 
   ####################
   # Public Methods
   ####################
+  addTag: (tag) ->
+    @log 'addTag() is executed'
+    # Render tag element by provided template
+    $tag = $(Mustache.render(@tagTemplate, tag))
+    @wrapper.append($tag)
+    # Default position for new tag
+    tag.x = tag.x || 50
+    tag.y = tag.y || 50
+    # Make offset so the position could be center point of icon
+    # TODO - Current convert percent to pixel, should allow user to
+    #        define the unit instead of hard code it
+    x = @wrapper.width() * (tag.x / 100)
+    y = @wrapper.height() * (tag.y / 100)
+    offsetX = $tag.outerWidth() / 2
+    offsetY = $tag.outerHeight() / 2
+    $tag.css
+      left: "#{x - offsetX}px"
+      top: "#{y - offsetY}px"
+    # Save tag data to data attr for easy access
+    $tag.data('tag-data', tag)
+    # Render tag editor tools
+    @_applyTools($tag) if @editor
+
+  deleteTag: ($tag) ->
+    @log 'deleteTag() is executed'
+
   edit: ->
     return if @editor is on
     @log 'edit() is executed'
     @wrapper.addClass('tagla-editing')
-    $('.tagla-tag').each ->
-      instance = $(@).data('draggabilly')
-      if instance
-        instance.enable()
-      else
-        instance = new Draggabilly(@, Tagla.DRAG_ATTR)
-        $(@).data('draggabilly', instance)
+    $('.tagla-tag').each -> @_applyTools($(@))
     @editor = on
 
   unedit: ->
     return if @edit is off
     @log 'unedit() is executed'
-    @wrapper.find('.tagla-tag').each ->
-      instance = $(@).data('draggabilly')
-      instance.disable()
+    $('.tagla-tag').each -> @_removeTools($(@))
     @wrapper.removeClass('tagla-editing')
     @editor = off
-
-  # Append a new tag to page
-  addTag: ->
-    return unless @editor # Only for editor mode
-    @log 'addTag() is executed'
-    $tag = $(Mustache.render(Tagla.NEW_TAG_TEMPLATE, tag))
-    @wrapper.append($tag)
-    tag = x: 50, y: 50
-    offsetX = @formatFloat($tag.outerWidth() / 2 / @wrapper.width() * 100, 2)
-    offsetY = @formatFloat($tag.outerHeight() / 2 / @wrapper.height() * 100, 2)
-    $tag.css
-      left: "#{tag.x - offsetX}%"
-      top: "#{tag.y - offsetY}%"
-    instance = new Draggabilly($tag[0], Tagla.DRAG_ATTR)
-    $(@).data('draggabilly', instance)
-
-  deleteTag: (e) ->
-
 
   ####################
   # Lifecycle Methods
@@ -239,12 +226,13 @@ proto =
 
   bind: ->
     @log 'bind() is executed'
-    @wrapper.on 'mouseenter', $.proxy(@handleMouseEnter, @)
-    @wrapper.on 'click', $.proxy(@handleWrapperClick, @)
-    @wrapper.on 'click', '.tagla-tag', $.proxy(@handleTagClick, @)
-    @wrapper.on 'click', '.tagla-tag-edit-link', $.proxy(@handleTagEdit, @)
-    @wrapper.on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
-    $(window).on 'resize', $.proxy(@handleWindowResize, @)
+    @wrapper
+      .on 'mouseenter', $.proxy(@handleMouseEnter, @)
+      .on 'click', $.proxy(@handleWrapperClick, @)
+      .on 'click', '.tagla-tag', $.proxy(@handleTagClick, @)
+      .on 'click', '.tagla-tag-edit-link', $.proxy(@handleTagEdit, @)
+      .on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
+    $(window).resize $.proxy(@handleWindowResize, @)
 
   render: ->
     # Delay to get dimension first
@@ -258,14 +246,16 @@ proto =
 
     @log 'render() is executed'
     @wrapper.addClass 'tagla'
-    @appendTag tag for tag in @data
     @wrapper.addClass 'tagla-editing' if @editor
+    @addTag tag for tag in @data
 
   destroy: ->
     @log 'destroy() is executed'
 
 $.extend(Tagla::, proto)
-window.Tagla = Tagla
+
+window.Stackla = {} unless window.Stackla
+window.Stackla.Tagla = Tagla
 
 
 ###
