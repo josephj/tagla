@@ -44,7 +44,7 @@ gulp.task 'watch', ->
   gulp.src COFFEE_PATH
     .pipe watch(COFFEE_PATH)
     .pipe sourcemaps.init()
-    .pipe coffee()
+    .pipe coffee().on('error', (err) ->)
     .pipe sourcemaps.write()
     .pipe gulp.dest(OUTPUT_PATH)
 

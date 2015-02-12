@@ -10,7 +10,7 @@ Tagla.FORM_TEMPLATE = [
   '<form class="tagla-form">'
   '    <input type="hidden" name="x">'
   '    <input type="hidden" name="y">'
-  '    <select data-placeholder="Choose tags..." type="text" name="label" class="tagla-select chosen-select">'
+  '    <select data-placeholder="Search" type="text" name="label" class="tagla-select chosen-select" placeholder="Search">'
   '        <option>Frankie Issue #6</option>'
   '        <option>Frankie Wall Calendar 2015</option>'
   '        <option>Frankie A5 Daily Planner</option>'
@@ -57,6 +57,9 @@ Tagla.NEW_TAG_TEMPLATE = [
 Tagla.DRAG_ATTR =
   containment: '.tagla'
   handle: '.tagla-icon'
+Tagla.SELECT_ATTR =
+  placeholder_text_single: 'Select an option'
+  width: '310px'
 
 proto =
   ##############
@@ -70,22 +73,41 @@ proto =
     size = Math.pow(10, pos)
     Math.round(num * size) / size
 
+  ##################
+  # Private Methods
+  ##################
+  # Initialize drag and select libs for a single tag
+  _setTools: ($tag) ->
+    drag = new Draggabilly($tag[0], Tagla.DRAG_ATTR)
+    drag.disable()
+    $tag.data('draggabilly', drag)
+    $tag.find('.tagla-select').chosen(Tagla.SELECT_ATTR)
+
+  ##################
+  # Public Mehtods
+  ##################
   appendTag: (tag) ->
     @log 'appendTag() is executed'
+    # Render tag element by provided template
     $tag = $(Mustache.render(@tagTemplate, tag))
     @wrapper.append($tag)
-
+    # Default position for new tag
+    tag.x = tag.x || 50
+    tag.y = tag.y || 50
+    # Make offset so the position could be center point of icon
+    # TODO - Current convert percent to pixel, should allow user to
+    #        define the unit instead of hard code it
     x = @wrapper.width() * (tag.x / 100)
     y = @wrapper.height() * (tag.y / 100)
     offsetX = $tag.outerWidth() / 2
     offsetY = $tag.outerHeight() / 2
-    console.log(x, y, offsetX, offsetY)
-    setTimeout ->
-      $tag.css
-        left: "#{x - offsetX}px"
-        top: "#{y - offsetY}px"
-      , 500
-      $tag.data('tag-data', tag)
+    $tag.css
+      left: "#{x - offsetX}px"
+      top: "#{y - offsetY}px"
+    # Save tag data to data attr for easy access
+    $tag.data('tag-data', tag)
+    # Render tag editor tools
+    @_setTools($tag) if @editor
 
   updateImageSize: ->
     @log 'updateImageSize() is executed'
@@ -117,8 +139,11 @@ proto =
     e.stopPropagation()
     $tag = $(e.currentTarget)
     $('.tagla-tag').each ->
-      $(@).removeClass('tagla-tag-active') if @ isnt $tag[0]
-      $(@).data('draggabilly').disable()
+      if @ isnt $tag[0]
+        $(@).removeClass('tagla-tag-active')
+        $(@).removeClass('tagla-tag-choose')
+        $(@).data('draggabilly').disable()
+        #$(@).find('.tagla-select').trigger('chosen:open')
     $tag.addClass('tagla-tag-active')
     $tag.data('draggabilly').enable()
 
@@ -178,6 +203,7 @@ proto =
     @wrapper.removeClass('tagla-editing')
     @editor = off
 
+  # Append a new tag to page
   addTag: ->
     return unless @editor # Only for editor mode
     @log 'addTag() is executed'
@@ -233,22 +259,38 @@ proto =
     @log 'render() is executed'
     @wrapper.addClass 'tagla'
     @appendTag tag for tag in @data
-
-    if @editor
-      @wrapper.addClass 'tagla-editing'
-      $('.tagla-tag').each ->
-        instance = $(@).data('draggabilly')
-        if instance
-          instance.enable()
-        else
-          instance = new Draggabilly(@, Tagla.DRAG_ATTR)
-          $(@).data('draggabilly', instance)
-          instance.disable()
-      @wrapper.find('.tagla-select').each ->
-        $(@).chosen()
+    @wrapper.addClass 'tagla-editing' if @editor
 
   destroy: ->
     @log 'destroy() is executed'
 
 $.extend(Tagla::, proto)
 window.Tagla = Tagla
+
+
+###
+      @wrapper.find('.tagla-select').each ->
+        $(@).chosen
+          placeholder_text_single: "Select an option"
+          width: '310px'
+        chosen = $(@).chosen().data('chosen')
+        autoClose = false
+        chosen_resultSelect_fn = chosen.result_select
+        chosen.search_contains = true
+        chosen.result_select = (evt) ->
+          resultHighlight = null
+          unless autoClose
+            evt['metaKey'] = true
+            evt['ctrlKey'] = true
+            resultHighlight = chosen.result_highlight
+          stext = chosen.get_search_text()
+          result = chosen_resultSelect_fn.call(chosen, evt)
+
+          if autoClose is off && resultHighlight != null
+            resultHighlight.addClass('result-selected')
+
+          @search_field.val(stext)
+          @winnow_results()
+          @search_field_scale()
+          result
+###
