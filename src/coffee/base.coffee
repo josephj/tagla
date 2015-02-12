@@ -4,8 +4,6 @@
 class Base
 
   constructor: (options = {}) ->
-    @init(options)
-    @bind()
     debug = @getParams('debug')
     attrs = attrs or {}
     if debug
