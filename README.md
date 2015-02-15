@@ -1,13 +1,15 @@
 tagla
 -----
+Awesome Photo Tagging library for Stackla
 
-# Installation
+
+## Installation
 
 ```
 bower install tagla
 ```
 
-# Usage
+## Usage
 
 * CSS files
 
@@ -59,7 +61,7 @@ var tagla = new Stackla.Tagla($container, {
 tagla.render();
 ```
 
-# Development
+## Development
 
 * Install npm and bower packages for first time only.
 
