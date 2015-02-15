@@ -67,46 +67,37 @@ p {
 
       $container = $('.image-wrapper');
       tagla = new Stackla.Tagla($container, {
-          editor: true,
-          unit: 'percent',
-          data: [
-            {
-              x: 25,
-              y: 70,
-              label: 'frankie Magazine January 2015',
-              price: '$26.95',
-              description: 'Just try wiping the smile off your dial when flipping through our 2015 daily journal pooka dots, pretty florals, stripes and cute shapes have been carefully hand-drawn by frankie illustrator sara jingle and sweetly bound in cloth, ready to keep you company all year long',
-              image: 'product.png'
-            },
-            {
-              x: 33,
-              y: 53,
-              label: 'John Jr',
-              price: 500,
-              description: 'Shy...',
-              image: 'product.png'
-            },
-            {
-              x: 65,
-              y: 32,
-              label: 'Gobbler',
-              price: 500,
-              description: 'Eat everything',
-              image: 'product.png'
-            }
-          ],
-          unit: 'percent',
-          handlers: {
-              'click': function () {
-                  console.log('click');
-              },
-              'mouseenter': function () {
-                  console.log('mouseenter');
-              },
-              'mouseleave': function () {
-                  console.log('mouseleave');
-              }
+        editor: true,
+        unit: 'percent',
+        data: [
+          {
+            "x": 25,
+            "y": 70,
+            "label": "Cockie",
+            "value": 1,
+            "price": "$500",
+            "description": "Hi, up for sale is my beautiful 9 year old cockatoo named cockie he is hand raised tamed cockatoo, loves you to scratch him arround his head and neck...he also likes to lift his wing for you to scratch him,loves attention and has a huge personality! He talks clearly, when he talks, he says hello, hello cockie, what you doing, what you doing cockie. Also does a few tricks like whistles cough laughs dances. Can send some videos of him on request. Cockie is a very healthy bird loves his vegetables fresh even boiled and loves his mandarine also other fruits, Reason of sale due to first new born twins don't have the time for him that he needs..unfortunately. Cockie comes with papers and is DNA tested also microchipped.",
+            "image": "parrot1.jpg"
+          },
+          {
+            "x": 33,
+            "y": 53,
+            "label": "Kiwi",
+            "value": 2,
+            "price": "$100",
+            "description": "Sulfer Crested Cockatoo, approx 2 years old. Doesn't bite, is able to be hand fed and also enjoys being scratched. Can't talk yet. Regrettable sale. Pick up from Leopold.",
+            "image": "parrot2.jpg"
+          },
+          {
+            "x": 65,
+            "y": 32,
+            "label": "Buddy",
+            "value": 3,
+            "price": "$300",
+            "description": "Cockatoo baby hand tame 14 weeks old friendly ready to go he eat by him self. Big & healthy bird 2 available $300 cheep",
+            "image": "parrot3.jpg"
           }
+        ]
       });
       tagla.render();
 

@@ -5,6 +5,7 @@ ATTRS =
     containment: '.tagla'
     handle: '.tagla-icon'
   SELECT_ATTR:
+    allow_single_deselect: on
     placeholder_text_single: 'Select an option'
     width: '310px'
   FORM_TEMPLATE: [
@@ -38,12 +39,17 @@ ATTRS =
     '        </div>'
     '    </div>'
     '    <form class="tagla-form">'
+    '        <div class="tagla-form-title">'
+    '          Select Your Product'
+    '          <a href="javascript:void(0);" class="tagla-form-close">×</a>'
+    '        </div>'
     '        <input type="hidden" name="x">'
     '        <input type="hidden" name="y">'
-    '        <select data-placeholder="Search" type="text" name="label" class="tagla-select chosen-select" placeholder="Search">'
-    '            <option>Frankie Issue #6</option>'
-    '            <option>Frankie Wall Calendar 2015</option>'
-    '            <option>Frankie A5 Daily Planner</option>'
+    '        <select data-placeholder="Search" type="text" name="tag" class="tagla-select chosen-select" placeholder="Search">'
+    '            <option></option>'
+    '            <option value="1">Cockie</option>'
+    '            <option value="2">Kiwi</option>'
+    '            <option value="3">Buddy</option>'
     '        </select>'
     '    </form>'
     '</div>'
@@ -82,6 +88,12 @@ proto =
     drag.on 'dragEnd', $.proxy(@handleTagMove, @)
     drag.disable()
     $tag.data('draggabilly', drag)
+    # Update form
+    tag = $tag.data('tag-data')
+    $form = $tag.find('.tagla-form')
+    $form.find('[name=x]').val(tag.x)
+    $form.find('[name=y]').val(tag.y)
+    $form.find("[name=tag] option[value=#{tag.value}]").attr('selected', 'selected')
     $tag.find('.tagla-select').chosen(Tagla.SELECT_ATTR)
     $tag.find('.tagla-select').on('change', $.proxy(@handleTagChange, @))
 
@@ -103,12 +115,16 @@ proto =
 
   _updateImageSize: (data) ->
     @log '_updateImageSize() is executed'
-    @naturalWidth = data.naturalWidth
-    @naturalHeight = data.naturalHeight
-    @currentWidth = data.width
-    @currentHeight = data.height
-    @widthRatio = data.widthRatio
-    @heightRatio = data.heightRatio
+    try
+      @naturalWidth = data.naturalWidth
+      @naturalHeight = data.naturalHeight
+      @currentWidth = data.width
+      @currentHeight = data.height
+      @widthRatio = data.widthRatio
+      @heightRatio = data.heightRatio
+    catch error
+      debugger
+      console.error  error
 
   ####################
   # Event Handlers
@@ -125,10 +141,14 @@ proto =
 
   handleTagChange: (e, params) ->
     @log 'handleTagChange() is executed'
-    $tag = $(e.target).parents('.tagla-tag')
-    $tag.removeClass('tagla-tag-choose tagla-tag-active')
-    console.log(params)
-    @emit('change', [params])
+    $select = $(e.target)
+    $tag = $select.parents('.tagla-tag')
+    $tag.removeClass 'tagla-tag-choose tagla-tag-active'
+    data = $tag.data('tag-data')
+    data.label = $select.find('option:selected').text()
+    data.value = $select.val() || data.label
+    serialize = $tag.find('.tagla-form').serialize()
+    @emit('change', [data, serialize, $tag])
 
   handleTagDelete: (e) ->
     @log 'handleTagDelete() is executed'
@@ -137,7 +157,8 @@ proto =
     $tag.remove()
     instance = $tag.data('draggabilly')
     instance.destroy() if (instance)
-    @emit('delete', [$tag.data('tag-data')])
+    data = $tag.data('tag-data')
+    @emit('delete', [data])
 
   handleTagEdit: (e) ->
     @log 'handleTagDelete() is executed'
@@ -149,12 +170,19 @@ proto =
 
   handleTagMove: (instance, event, pointer) ->
     @log 'handleTagMove() is executed'
+
     $tag = $(instance.element)
     data = $tag.data('tag-data')
     pos = @_getPosition($tag)
     data.x = pos[0]
     data.y = pos[1]
-    @emit('move', [pos, data, $tag])
+
+    $form = $tag.find('.tagla-form')
+    $form.find('[name=x]').val(data.x)
+    $form.find('[name=y]').val(data.y)
+    serialize = $tag.find('.tagla-form').serialize()
+
+    @emit('move', [data, serialize, $tag])
 
   handleWrapperClick: (e) ->
     @log 'handleWrapperClick() is executed'
@@ -225,8 +253,17 @@ proto =
     $except = $($except)
     $('.tagla-tag').each ->
       return if $except[0] is @
-      $(@).removeClass 'tagla-tag-active tagla-tag-choose'
-      $(@).data('draggabilly').disable()
+      $tag = $(@)
+      #alert $tag.find('[name=tag]').val()
+      if $tag.hasClass('tagla-tag-new') and !$tag.find('[name=tag]').val()
+        $tag.remove()
+      $tag.removeClass 'tagla-tag-active tagla-tag-choose'
+      $tag.data('draggabilly').disable()
+
+  updateDialog: ($tag, data) ->
+    html = $(Mustache.render(@tagTemplate, data)).find('.tagla-dialog').html()
+    $tag.find('.tagla-dialog').html(html)
+    $tag.data('tag-data', data)
 
   unedit: ->
     return if @edit is off

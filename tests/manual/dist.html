@@ -94,37 +94,30 @@ p {
               "description": "Cockatoo baby hand tame 14 weeks old friendly ready to go he eat by him self. Big & healthy bird 2 available $300 cheep",
               "image": "parrot3.jpg"
             }
-          ],
-          unit: 'percent',
-          handlers: {
-              'click': function () {
-                  console.log('click');
-              },
-              'mouseenter': function () {
-                  console.log('mouseenter');
-              },
-              'mouseleave': function () {
-                  console.log('mouseleave');
-              }
-          }
+          ]
       });
       tagla.render();
 
-      tagla.on('change', function (e, data, $tag) {
-        console.log(JSON.stringify(data));
-        // Make AJAX request
+      tagla.on('change', function (e, data, serialize, $tag) {
+        console.log('Update Data: ' + serialize)
         $.ajax(data.value + '.json', {
+          data: serialize,
           success: function (data) {
-
-          },
-          error: function () {
-
+            tagla.updateDialog($tag, data)
           }
-        })
+        });
       });
-
-      tagla.on('move', function (e, data, $tag) {
-        console.log(JSON.stringify(data));
+      tagla.on('move', function (e, data, serialize, $tag) {
+        console.log('Update Data: ' + serialize)
+        $.ajax(data.value + '.json', {
+          data: serialize,
+          success: function (data) {
+            tagla.updateDialog($tag, data)
+          }
+        });
+      });
+      tagla.on('delete', function (e, data, $tag) {
+        // Delete shopspot
       });
 
       $('.add-tag').on('click', function (e) {
