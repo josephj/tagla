@@ -29,6 +29,14 @@ ATTRS =
     '        </div>'
     '        {{/image}}'
     '        <div class="tagla-dialog-text">'
+    '          <div class="tagla-dialog-edit">'
+    '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-edit-link">'
+    '              <i class="fs fs-pencil"></i> Edit'
+    '            </a>'
+    '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-delete-link">'
+    '              <i class="fs fs-cross3"></i> Delete'
+    '            </a>'
+    '          </div>'
     '          <h2 class="tagla-dialog-title">{{label}}</h2>'
     '          <div class="tagla-dialog-price">{{price}}</div>'
     '          <p class="tagla-dialog-description">{{description}}</p>'
@@ -86,7 +94,6 @@ proto =
   _applyTools: ($tag) ->
     drag = new Draggabilly($tag[0], Tagla.DRAG_ATTR)
     drag.on 'dragEnd', $.proxy(@handleTagMove, @)
-    drag.disable()
     $tag.data('draggabilly', drag)
     # Update form
     tag = $tag.data('tag-data')
@@ -161,12 +168,13 @@ proto =
     @emit('delete', [data])
 
   handleTagEdit: (e) ->
-    @log 'handleTagDelete() is executed'
+    @log 'handleTagEdit() is executed'
     e.preventDefault()
+    e.stopPropagation()
     $tag = $(e.currentTarget).parents('.tagla-tag')
     $tag.addClass('tagla-tag-choose')
     $tag.find('.tagla-select').trigger('chosen:open')
-    @emit('tagla:edit', [$tag.data('tag-data')])
+    @emit('edit', [$tag.data('tag-data')])
 
   handleTagMove: (instance, event, pointer) ->
     @log 'handleTagMove() is executed'
@@ -258,7 +266,7 @@ proto =
       if $tag.hasClass('tagla-tag-new') and !$tag.find('[name=tag]').val()
         $tag.remove()
       $tag.removeClass 'tagla-tag-active tagla-tag-choose'
-      $tag.data('draggabilly').disable()
+      #$tag.data('draggabilly').disable()
 
   updateDialog: ($tag, data) ->
     html = $(Mustache.render(@tagTemplate, data)).find('.tagla-dialog').html()
@@ -291,7 +299,7 @@ proto =
     @wrapper
       .on 'mouseenter', $.proxy(@handleMouseEnter, @)
       .on 'click', $.proxy(@handleWrapperClick, @)
-      .on 'click', '.tagla-tag', $.proxy(@handleTagClick, @)
+      #.on 'click', '.tagla-tag', $.proxy(@handleTagClick, @)
       .on 'click', '.tagla-tag-edit-link', $.proxy(@handleTagEdit, @)
       .on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
 
