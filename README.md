@@ -21,7 +21,13 @@ bower install tagla
 * JavaScript files
 
 ```html
-<script src="bower_component/tagla/dist/tagla.min.css" />
+<script src="bower_component/vendor/jquery/dist/jquery.min.js"></script>
+<script src="bower_component/vendor/mustache.js/mustache.min.js"></script>
+<!-- Draggabilly and Chosen are required for `editor: true` (start) -->
+<script src="bower_component/vendor/draggabilly/dist/draggabilly.pkgd.min.js"></script>
+<script src="bower_component/chosen_v1.3.0/chosen.jquery.min.js"></script>
+<!-- Draggabilly and Chosen are required for `editor: true` (end) -->
+<script src="bower_component/tagla/dist/tagla.min.js"></script>
 ```
 
 * Instantiate
