@@ -30,8 +30,8 @@ gulp.task 'connect', ->
 
 # Task - open
 gulp.task 'open', ->
-  gulp.src './tests/manual/demo.html'
-    .pipe open('', url: "http://localhost:#{HTTP_PORT}/tests/manual/demo.html")
+  gulp.src './tests/manual/development.html'
+    .pipe open('', url: "http://localhost:#{HTTP_PORT}/tests/manual/development.html")
 
 # Task - watch
 gulp.task 'watch', ->

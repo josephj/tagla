@@ -2,6 +2,7 @@ class ImageSize extends Stackla.Base
   constructor: (el, callback) ->
     super()
     @el = $(el)[0]
+    @debug = on
     @complete = @el.complete
     @data =
       width: @el.width
@@ -11,19 +12,22 @@ class ImageSize extends Stackla.Base
     @_timer = null
     # Image Loaded
     if @complete
+      @log "Image '#{@el.src}' is ready"
       img = new Image()
       img.src = @el.src
       $.extend @data, {naturalWidth: img.width, naturalHeight: img.height}
       callback(true, @data)
     # Image Loading
     else
+      @log "Image '#{@el.src}' is NOT ready"
       img = new Image()
       img.src = @el.src
-      img.onload = (e) ->
-        img = e.target
+      img.onload = (e) =>
+        @log "Image '#{img.src}' is loaded"
         $.extend @data, {naturalWidth: img.width, naturalHeight: img.height}
         callback(true, @data)
-      img.onerror = (e) ->
+      img.onerror = (e) =>
+        @log "Image '#{img.src}' is failed to load"
         callback(false, @data)
 
     # Keep an eye on resize event
@@ -41,8 +45,8 @@ class ImageSize extends Stackla.Base
         @.emit('change', [@data])
         @_timer = null
       , 100
-
     return @
+  toString: () -> 'ImageSize'
 
 window.Stackla = {} unless window.Stackla
 Stackla.getImageSize = (el, callback) -> new ImageSize(el, callback)
