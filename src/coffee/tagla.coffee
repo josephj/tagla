@@ -13,15 +13,6 @@ ATTRS =
   TAG_TEMPLATE: [
     '<div class="tagla-tag">'
     '    <i class="tagla-icon fs fs-tag"></i>'
-    '    <span class="tagla-label">'
-    '      {{label}}'
-    '      <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-edit-link">'
-    '        <i class="fs fs-pencil"></i> Edit'
-    '      </a>'
-    '      <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-delete-link">'
-    '        <i class="fs fs-cross3"></i> Delete'
-    '      </a>'
-    '    </span>'
     '    <div class="tagla-dialog">'
     '        {{#image}}'
     '        <div class="tagla-dialog-image">'
@@ -101,9 +92,11 @@ proto =
     $form.find('[name=x]').val(tag.x)
     $form.find('[name=y]').val(tag.y)
     $form.find("[name=tag] option[value=#{tag.value}]").attr('selected', 'selected')
-    $tag.find('.tagla-select').chosen(Tagla.SELECT_ATTR)
-    $tag.find('.tagla-select').on('change', $.proxy(@handleTagChange, @))
-
+    $select = $tag.find('.tagla-select')
+    $select.chosen(Tagla.SELECT_ATTR)
+    $select.on 'change', $.proxy(@handleTagChange, @)
+    $select.on 'chosen:hiding_dropdown', (e, params) ->
+      $select.trigger('chosen:open')
   _removeTools: ($tag) ->
     $tag.data('draggabilly').destroy()
     $select = $tag.find('.tagla-select')
@@ -118,20 +111,16 @@ proto =
     if @unit is 'percent'
       x = x / @naturalWidth * 100
       y = y / @naturalHeight * 100
-    return [x, y]
+    [x, y]
 
   _updateImageSize: (data) ->
     @log '_updateImageSize() is executed'
-    try
-      @naturalWidth = data.naturalWidth
-      @naturalHeight = data.naturalHeight
-      @currentWidth = data.width
-      @currentHeight = data.height
-      @widthRatio = data.widthRatio
-      @heightRatio = data.heightRatio
-    catch error
-      debugger
-      console.error  error
+    @naturalWidth = data.naturalWidth
+    @naturalHeight = data.naturalHeight
+    @currentWidth = data.width
+    @currentHeight = data.height
+    @widthRatio = data.widthRatio
+    @heightRatio = data.heightRatio
 
   ####################
   # Event Handlers
@@ -173,6 +162,7 @@ proto =
     e.stopPropagation()
     $tag = $(e.currentTarget).parents('.tagla-tag')
     $tag.addClass('tagla-tag-choose')
+    @wrapper.addClass('tagla-editing-selecting')
     $tag.find('.tagla-select').trigger('chosen:open')
     @emit('edit', [$tag.data('tag-data')])
 
@@ -190,11 +180,13 @@ proto =
     $form.find('[name=y]').val(data.y)
     serialize = $tag.find('.tagla-form').serialize()
 
+    @lastDragTime = new Date()
     @emit('move', [data, serialize, $tag])
 
   handleWrapperClick: (e) ->
     @log 'handleWrapperClick() is executed'
-    @shrink()
+    # Hack to avoid triggering click event
+    @shrink() if (new Date() - @lastDragTime > 10)
 
   handleImageResize: (e, data) ->
     @log 'handleImageResize() is executed'
@@ -243,7 +235,10 @@ proto =
       if isNew
         $tag.data('draggabilly').enable()
         $tag.addClass('tagla-tag-choose')
-        $tag.find('.tagla-select').trigger('chosen:open')
+        setTimeout =>
+          @wrapper.addClass('tagla-editing-selecting')
+          $tag.find('.tagla-select').trigger 'chosen:open'
+        , 100
 
   deleteTag: ($tag) ->
     @log 'deleteTag() is executed'
@@ -255,18 +250,18 @@ proto =
     $('.tagla-tag').each -> @_applyTools($(@))
     @editor = on
 
+  # Shrink everything except the $except
   shrink: ($except = null) ->
     return if @editor is off
     @log 'shrink() is executed'
     $except = $($except)
+    @wrapper.removeClass 'tagla-editing-selecting'
     $('.tagla-tag').each ->
       return if $except[0] is @
       $tag = $(@)
-      #alert $tag.find('[name=tag]').val()
       if $tag.hasClass('tagla-tag-new') and !$tag.find('[name=tag]').val()
         $tag.remove()
       $tag.removeClass 'tagla-tag-active tagla-tag-choose'
-      #$tag.data('draggabilly').disable()
 
   updateDialog: ($tag, data) ->
     html = $(Mustache.render(@tagTemplate, data)).find('.tagla-dialog').html()
@@ -293,13 +288,13 @@ proto =
     # Attributes
     @imageSize = null
     @image = @wrapper.find('img')
+    @lastDragTime = new Date()
 
   bind: ->
     @log 'bind() is executed'
     @wrapper
       .on 'mouseenter', $.proxy(@handleMouseEnter, @)
       .on 'click', $.proxy(@handleWrapperClick, @)
-      #.on 'click', '.tagla-tag', $.proxy(@handleTagClick, @)
       .on 'click', '.tagla-tag-edit-link', $.proxy(@handleTagEdit, @)
       .on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
 
