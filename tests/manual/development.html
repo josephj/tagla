@@ -106,6 +106,7 @@ p {
         console.log('Update Data: ' + serialize)
         $.ajax(data.value + '.json', {
           data: serialize,
+          dataType: 'json',
           success: function (data) {
             tagla.updateDialog($tag, data)
           }
@@ -116,6 +117,7 @@ p {
         console.log('Update Data: ' + serialize)
         $.ajax(data.value + '.json', {
           data: serialize,
+          dataType: 'json',
           success: function (data) {
             tagla.updateDialog($tag, data)
           }
