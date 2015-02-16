@@ -47,8 +47,8 @@ gulp.task 'watch', ->
     .pipe coffee().on('error', (err) ->)
     .pipe sourcemaps.write()
     .pipe gulp.dest(JS_PATH)
-  gulp.src [HTML_PATH, CSS_PATH, JS_PATH]
-    .pipe watch([HTML_PATH, CSS_PATH, JS_PATH])
+  gulp.src [HTML_PATH, SASS_PATH, COFFEE_PATH]
+    .pipe watch([HTML_PATH, SASS_PATH, COFFEE_PATH])
     .pipe connect.reload()
 
 # Task - build

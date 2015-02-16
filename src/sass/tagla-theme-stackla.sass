@@ -174,12 +174,13 @@
 .tagla-form-close
   position: absolute
   border-radius: 19px
-  color: #fff
   font-size: 22px
   font-weight: bold
   right: 20px
-  top: 5px
+  top: 3px
   text-decoration: none
+  &:link, &:visited
+    color: #fff
 
 .chosen-single
   display: none
@@ -221,13 +222,19 @@
   white-space: nowrap
   padding: 15px 10px
   font-size: 12px
-
+  margin-bottom: 1px
 
 .chosen-container .chosen-results li em,
 .chosen-container .chosen-results li.result-selected
   font-weight: bold
 
+.chosen-container .chosen-results li.highlighted
+  background-color: transparent
+  background-image: none
+  color: #444;
+
 .chosen-container .chosen-results li.result-selected,
 .chosen-container .chosen-results li:hover
   background: #cfe8f5
   color: #333
+
