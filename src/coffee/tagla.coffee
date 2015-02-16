@@ -97,6 +97,23 @@ proto =
     $select.on 'change', $.proxy(@handleTagChange, @)
     $select.on 'chosen:hiding_dropdown', (e, params) ->
       $select.trigger('chosen:open')
+
+  _disableDrag: ($except) ->
+    return if @editor is off
+    @log '_disableDrag() is executed'
+    $except = $($except)
+    $('.tagla-tag').each ->
+      return if $except[0] is @
+      $(@).data('draggabilly').disable();
+
+  _enableDrag: ($except) ->
+    return if @editor is off
+    @log '_enableDrag() is executed'
+    $except = $($except)
+    $('.tagla-tag').each ->
+      return if $except[0] is @
+      $(@).data('draggabilly').enable();
+
   _removeTools: ($tag) ->
     $tag.data('draggabilly').destroy()
     $select = $tag.find('.tagla-select')
@@ -139,7 +156,7 @@ proto =
     @log 'handleTagChange() is executed'
     $select = $(e.target)
     $tag = $select.parents('.tagla-tag')
-    $tag.removeClass 'tagla-tag-choose tagla-tag-active'
+    $tag.removeClass 'tagla-tag-choose tagla-tag-active tagla-tag-new'
     data = $tag.data('tag-data')
     data.label = $select.find('option:selected').text()
     data.value = $select.val() || data.label
@@ -163,6 +180,7 @@ proto =
     $tag = $(e.currentTarget).parents('.tagla-tag')
     $tag.addClass('tagla-tag-choose')
     @wrapper.addClass('tagla-editing-selecting')
+    @_disableDrag($tag)
     $tag.find('.tagla-select').trigger('chosen:open')
     @emit('edit', [$tag.data('tag-data')])
 
@@ -210,9 +228,16 @@ proto =
     # Render tag element by provided template
     $tag = $(Mustache.render(@tagTemplate, tag))
     isNew = $.isEmptyObject(tag)
-    @wrapper.append($tag)
-    # Default position for new tag
+
+    # Remove previous added new tag if it hasn't being set
     if isNew
+      $('.tagla-tag').each ->
+        if $(@).hasClass('tagla-tag-new') and !$(@).find('[name=tag]').val()
+          $(@).remove()
+
+    @wrapper.append($tag)
+    if isNew # Default position for new tag
+      # TODO - Need a smart way to avoid collision
       tag.x = 50
       tag.y = 50
       $tag.addClass 'tagla-tag-new tagla-tag-active tagla-tag-choose'
@@ -238,6 +263,7 @@ proto =
         setTimeout =>
           @wrapper.addClass('tagla-editing-selecting')
           $tag.find('.tagla-select').trigger 'chosen:open'
+          @_disableDrag($tag)
         , 100
 
   deleteTag: ($tag) ->
@@ -262,6 +288,7 @@ proto =
       if $tag.hasClass('tagla-tag-new') and !$tag.find('[name=tag]').val()
         $tag.remove()
       $tag.removeClass 'tagla-tag-active tagla-tag-choose'
+    @_enableDrag()
 
   updateDialog: ($tag, data) ->
     html = $(Mustache.render(@tagTemplate, data)).find('.tagla-dialog').html()
@@ -298,30 +325,26 @@ proto =
       .on 'click', '.tagla-tag-edit-link', $.proxy(@handleTagEdit, @)
       .on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
 
-  renderFn: (success, data) ->
-    # Stop if image is failed to load
-    unless success
-      @log("Failed to load image: #{@image.attr('src')}", 'error')
-      @destroy()
-      return
-    # Save dimension
-    @_updateImageSize(data)
-    # Apply necessary class names
-    @wrapper.addClass 'tagla'
-    @wrapper.addClass 'tagla-editing' if @editor
-    # Create tags
-    @addTag tag for tag in @data
-
   render: ->
     @log 'render() is executed'
     @imageSize = Stackla.getImageSize(@image, $.proxy(@renderFn, @))
     @imageSize.on('change', $.proxy(@handleImageResize, @))
 
+  renderFn: (success, data) ->
+    @log 'renderFn() is executed'
+    unless success # Stop if image is failed to load
+      @log("Failed to load image: #{@image.attr('src')}", 'error')
+      @destroy()
+      return
+    @_updateImageSize(data) # Save dimension
+    @wrapper.addClass 'tagla' # Apply necessary class names
+    @wrapper.addClass 'tagla-editing' if @editor
+    @addTag tag for tag in @data # Create tags
+
   destroy: ->
     @log 'destroy() is executed'
 
 $.extend(Tagla::, proto)
-
 window.Stackla = {} unless window.Stackla
 window.Stackla.Tagla = Tagla
 

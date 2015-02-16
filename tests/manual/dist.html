@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <title>tagla</title>
 <link rel="stylesheet" href="../../vendor/HTML5-Reset/assets/css/reset.css" />
+<link rel="stylesheet" href="https://my.stackla.com/media/components/stackla-uikit/css/uikit.css" />
 <link rel="stylesheet" href="../../vendor/chosen_v1.3.0/chosen.min.css" />
 <link rel="stylesheet" href="../../dist/tagla.min.css" />
 <style>
-@import url(//fonts.googleapis.com/css?family=Montserrat:700,400|Open+Sans:300italic,400italic,700italic,700,300,400);
 body {
   background: #eee;
   color: #333;
@@ -35,6 +35,9 @@ p {
   text-align: center;
   margin: 20px;
 }
+.image-wrapper {
+  margin-bottom: 10px;
+}
 </style>
 </head>
 <body>
@@ -45,11 +48,9 @@ p {
     <div class="image-wrapper">
       <img src="parrots.jpg?r=1" width="100%" alt="Sulphur Crested Cockatoos">
     </div>
-
-    <div class="btn">
-      <button class="add-tag">Add Tag</button>
+    <div class="st-form-group">
+      <button class="add-tag st-btn st-btn-solid st-btn-success">Add Tag</button>
     </div>
-
   </div>
 
   <script src="../../vendor/jquery/dist/jquery.min.js"></script>
@@ -107,6 +108,7 @@ p {
           }
         });
       });
+
       tagla.on('move', function (e, data, serialize, $tag) {
         console.log('Update Data: ' + serialize)
         $.ajax(data.value + '.json', {
@@ -116,6 +118,7 @@ p {
           }
         });
       });
+
       tagla.on('delete', function (e, data, $tag) {
         // Delete shopspot
       });

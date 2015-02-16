@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="../../src/css/tagla-core.css" />
 <link rel="stylesheet" href="../../src/css/tagla-theme-stackla.css" />
 <style>
-@import url(//fonts.googleapis.com/css?family=Montserrat:700,400|Open+Sans:300italic,400italic,700italic,700,300,400);
 body {
   background: #eee;
   color: #333;
@@ -103,12 +102,28 @@ p {
       });
       tagla.render();
 
-      tagla.on('change', function (e) {
-        console.log('change');
+      tagla.on('change', function (e, data, serialize, $tag) {
+        console.log('Update Data: ' + serialize)
+        $.ajax(data.value + '.json', {
+          data: serialize,
+          success: function (data) {
+            tagla.updateDialog($tag, data)
+          }
+        });
       });
 
-      tagla.on('move', function (e, $tag) {
-        console.log($tag);
+      tagla.on('move', function (e, data, serialize, $tag) {
+        console.log('Update Data: ' + serialize)
+        $.ajax(data.value + '.json', {
+          data: serialize,
+          success: function (data) {
+            tagla.updateDialog($tag, data)
+          }
+        });
+      });
+
+      tagla.on('delete', function (e, data, $tag) {
+        // Delete shopspot
       });
 
       $('.add-tag').on('click', function (e) {
