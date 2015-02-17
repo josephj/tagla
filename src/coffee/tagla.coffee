@@ -9,34 +9,6 @@ ATTRS =
     placeholder_text_single: 'Select an option'
     width: '310px'
   FORM_TEMPLATE: [
-  ].join('\n')
-  TAG_TEMPLATE: [
-    '<div class="tagla-tag">'
-    '    <i class="tagla-icon fs fs-tag"></i>'
-    '    <div class="tagla-dialog">'
-    '        {{#image}}'
-    '        <div class="tagla-dialog-image">'
-    '          <img src="{{image}}">'
-    '        </div>'
-    '        {{/image}}'
-    '        <div class="tagla-dialog-text">'
-    '          <div class="tagla-dialog-edit">'
-    '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-edit-link">'
-    '              <i class="fs fs-pencil"></i> Edit'
-    '            </a>'
-    '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-delete-link">'
-    '              <i class="fs fs-cross3"></i> Delete'
-    '            </a>'
-    '          </div>'
-    '          <h2 class="tagla-dialog-title">{{label}}</h2>'
-    '          <div class="tagla-dialog-price">{{price}}</div>'
-    '          <p class="tagla-dialog-description">{{description}}</p>'
-    '          <a href="{{url}}" class="tagla-dialog-button st-btn st-btn-success st-btn-solid">'
-    '            <i class="fs fs-cart"></i>'
-    '            Buy Now'
-    '          </a>'
-    '        </div>'
-    '    </div>'
     '    <form class="tagla-form">'
     '        <div class="tagla-form-title">'
     '          Select Your Product'
@@ -51,6 +23,43 @@ ATTRS =
     '            <option value="3">Buddy</option>'
     '        </select>'
     '    </form>'
+  ].join('\n')
+  TAG_TEMPLATE: [
+    '<div class="tagla-tag">'
+    '    <i class="tagla-icon fs fs-tag"></i>'
+    '    <div class="tagla-dialog">'
+    '    {{#product}}'
+    '        {{#image_small_url}}'
+    '        <div class="tagla-dialog-image">'
+    '          <img src="{{image_small_url}}">'
+    '        </div>'
+    '        {{/image_small_url}}'
+    '        <div class="tagla-dialog-text">'
+    '          <div class="tagla-dialog-edit">'
+    '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-edit-link">'
+    '              <i class="fs fs-pencil"></i> Edit'
+    '            </a>'
+    '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-delete-link">'
+    '              <i class="fs fs-cross3"></i> Delete'
+    '            </a>'
+    '          </div>'
+    '          <h2 class="tagla-dialog-title">{{slug}}</h2>'
+    '          {{#price}}'
+    '          <div class="tagla-dialog-price">{{price}}</div>'
+    '          {{/price}}'
+    '          {{#description}}'
+    '          <p class="tagla-dialog-description">{{description}}</p>'
+    '          {{/description}}'
+    '          {{#custom_url}}'
+    '          <a href="{{custom_url}}" class="tagla-dialog-button st-btn st-btn-success st-btn-solid" target=""{{target}}">'
+    '            <i class="fs fs-cart"></i>'
+    '            Buy Now'
+    '          </a>'
+    '          {{/custom_url}}'
+    '        </div>'
+    '    {{/product}}'
+    '    </div>'
+    '    {{{form_html}}}'
     '</div>'
   ].join('\n')
   NEW_TAG_TEMPLATE: [
@@ -156,21 +165,26 @@ proto =
     @log 'handleTagChange() is executed'
     $select = $(e.target)
     $tag = $select.parents('.tagla-tag')
+    isNew = $tag.hasClass('tagla-tag-new')
     $tag.removeClass 'tagla-tag-choose tagla-tag-active tagla-tag-new'
     data = $tag.data('tag-data')
     data.label = $select.find('option:selected').text()
     data.value = $select.val() || data.label
     serialize = $tag.find('.tagla-form').serialize()
-    @emit('change', [data, serialize, $tag])
+    if isNew
+      @emit('add', [data, serialize, $tag])
+    else
+      @emit('change', [data, serialize, $tag])
 
   handleTagDelete: (e) ->
     @log 'handleTagDelete() is executed'
     e.preventDefault()
     $tag = $(e.currentTarget).parents('.tagla-tag')
+    data = $tag.data('tag-data')
     $tag.remove()
+    #$tag.fadeOut -> $tag.remove()
     instance = $tag.data('draggabilly')
     instance.destroy() if (instance)
-    data = $tag.data('tag-data')
     @emit('delete', [data])
 
   handleTagEdit: (e) ->
@@ -199,7 +213,7 @@ proto =
     serialize = $tag.find('.tagla-form').serialize()
 
     @lastDragTime = new Date()
-    @emit('move', [data, serialize, $tag])
+    @emit('move', [data, serialize, $tag]) if data.id
 
   handleWrapperClick: (e) ->
     @log 'handleWrapperClick() is executed'
@@ -226,13 +240,16 @@ proto =
   addTag: (tag = {}) ->
     @log 'addTag() is executed'
     # Render tag element by provided template
+    tag = $.extend({}, tag)
+    tag.form_html = @formHtml
     $tag = $(Mustache.render(@tagTemplate, tag))
-    isNew = $.isEmptyObject(tag)
+    isNew = (!tag.x and !tag.y)
 
     # Remove previous added new tag if it hasn't being set
     if isNew
       $('.tagla-tag').each ->
         if $(@).hasClass('tagla-tag-new') and !$(@).find('[name=tag]').val()
+          #$(@).fadeOut -> $(@).remove()
           $(@).remove()
 
     @wrapper.append($tag)
@@ -286,11 +303,13 @@ proto =
       return if $except[0] is @
       $tag = $(@)
       if $tag.hasClass('tagla-tag-new') and !$tag.find('[name=tag]').val()
+        #$tag.fadeOut -> $tag.remove()
         $tag.remove()
       $tag.removeClass 'tagla-tag-active tagla-tag-choose'
     @_enableDrag()
 
   updateDialog: ($tag, data) ->
+    data.form_html = @formHtml;
     html = $(Mustache.render(@tagTemplate, data)).find('.tagla-dialog').html()
     $tag.find('.tagla-dialog').html(html)
     $tag.data('tag-data', data)
@@ -309,7 +328,8 @@ proto =
     # Configure Options
     @data = options.data || []
     @editor = (options.editor is on) ? on : false
-    @form = if options.form then $(options.form) else Tagla.FORM_TEMPLATE
+    @formHtml = if options.form then $(options.form) else $(Tagla.FORM_TEMPLATE)
+    @formHtml = @formHtml.html()
     @tagTemplate = if options.tagTemplate then $(options.tagTemplate).html() else Tagla.TAG_TEMPLATE
     @unit = if options.unit is 'percent' then 'percent' else 'pixel'
     # Attributes
@@ -343,6 +363,12 @@ proto =
 
   destroy: ->
     @log 'destroy() is executed'
+    @wrapper.removeClass 'tagla tagla-editing'
+    @wrapper.find('.tagla-tag').each ->
+      $tag = $(@)
+      $tag.find('.tagla-select').chosen 'destroy'
+      $tag.data('draggabilly').destroy()
+      $tag.remove()
 
 $.extend(Tagla::, proto)
 window.Stackla = {} unless window.Stackla
