@@ -41,6 +41,7 @@ class Base
     if @_listeners[type] and @_listeners[type].length
       for i of @_listeners[type]
         @_listeners[type][i].apply @, data
+    @
 
   getParams: (key) ->
     href = @getUrl()

@@ -1,5 +1,11 @@
 @import '../fontcustom/font_stackla'
 
+@-webkit-keyframes fadein
+  from
+    opacity: 0
+  to
+    opacity: 1
+
 .tagla-editing
   use-select: none
 
@@ -7,16 +13,17 @@
   background-color: rgba(#669933, 0.5)
   border-radius: 48px
   position: absolute
-  left: -96px
-  top: auto
+  box-sizing: border-box
+  left: calc(100% - 48px)
+  top: 0
   width: 48px
   height: 48px
   overflow: hidden
   border: dashed 1px #fff
-  transition: all 0.5s
   text-align: center
   vertical-align: middle
   z-index: 0
+  transition: all 0.5s
   &:before
     border: dotted 1px #316500
     border-radius: 48px
@@ -70,10 +77,14 @@
 
   // Editing Mode
   .tagla-editing &
-    transition: none
+    transition: all 0.1s linear
     z-index: 1
     &.tagla-tag-new
+      transition: none
+      -webkit-animation: fadein 0.5s
       z-index: 2
+      &.is-dragging
+        transition: all 0.1s linear
 
 .tagla-icon
   color: #fff
@@ -190,64 +201,64 @@
   &:link, &:visited
     color: #fff
 
-.chosen-single
-  display: none
+.tagla
+  .chosen-container-single .chosen-single
+    display: none
 
-.chosen-container
-  width: 310px
+  .chosen-container
+    width: 310px
 
-.chosen-container-single .chosen-single
-  display: none
+  .chosen-container-active.chosen-with-drop .chosen-single
+    background: #404040
+    border: none
+    color: #fff
+    padding: 10px 20px
+    font-size: 14px
+    height: auto
+    span
+      font-weight: bold
 
-.chosen-container-active.chosen-with-drop .chosen-single
-  background: #404040
-  border: none
-  color: #fff
-  padding: 10px 20px
-  font-size: 14px
-  height: auto
-  span
+  .chosen-container-single .chosen-search input[type=text]
+    background: none
+    border-width: 0 0 1px
+    border-color: #ccc
+    padding: 10px 15px
+    margin: 0
+
+  .chosen-container-single .chosen-search
+    padding: 0
+
+  .chosen-container .chosen-results
+    padding: 10px
+    margin: 0
+
+  .chosen-container-active.chosen-with-drop .chosen-single
+    box-shadow: none
+    display: none
+
+  .chosen-container .chosen-results li
+    white-space: nowrap
+    padding: 15px 10px
+    font-size: 12px
+    margin-bottom: 1px
+
+  .chosen-container .chosen-results li em,
+  .chosen-container .chosen-results li.result-selected
     font-weight: bold
 
-.chosen-container-single .chosen-search input[type=text]
-  background: none
-  border-width: 0 0 1px
-  border-color: #ccc
-  padding: 10px 15px
-  margin: 0
+  .chosen-container .chosen-results li.highlighted
+    background-color: transparent
+    background-image: none
+    color: #444;
 
-.chosen-container-single .chosen-search
-  padding: 0
+  .chosen-container .chosen-results li.result-selected,
+  .chosen-container .chosen-results li:hover
+    background: #cfe8f5
+    color: #333
 
-.chosen-container .chosen-results
-  padding: 10px
-  margin: 0
+  .chosen-container-single .chosen-search input[type=text]
+    background-image: none !important
 
-.chosen-container-active.chosen-with-drop .chosen-single
-  box-shadow: none
+  .chosen-container-single .chosen-drop
+    margin-top: -3px
 
-.chosen-container .chosen-results li
-  white-space: nowrap
-  padding: 15px 10px
-  font-size: 12px
-  margin-bottom: 1px
-
-.chosen-container .chosen-results li em,
-.chosen-container .chosen-results li.result-selected
-  font-weight: bold
-
-.chosen-container .chosen-results li.highlighted
-  background-color: transparent
-  background-image: none
-  color: #444;
-
-.chosen-container .chosen-results li.result-selected,
-.chosen-container .chosen-results li:hover
-  background: #cfe8f5
-  color: #333
-
-.chosen-container-single .chosen-search input[type=text]
-  background-image: none !important
-
-.chosen-container-single .chosen-drop
-  margin-top: -3px

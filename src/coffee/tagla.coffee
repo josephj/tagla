@@ -82,9 +82,6 @@ proto =
   ##############
   # Utilities
   ##############
-  formatFloat: (num, pos) ->
-    size = Math.pow(10, pos)
-    Math.round(num * size) / size
   toString: -> 'Tagla'
 
   ##################
@@ -102,7 +99,7 @@ proto =
     $form.find('[name=y]').val(tag.y)
     $form.find("[name=tag] option[value=#{tag.value}]").attr('selected', 'selected')
     $select = $tag.find('.tagla-select')
-    $select.chosen(Tagla.SELECT_ATTR)
+    $select.chosen2(Tagla.SELECT_ATTR)
     $select.on 'change', $.proxy(@handleTagChange, @)
     $select.on 'chosen:hiding_dropdown', (e, params) ->
       $select.trigger('chosen:open')
@@ -167,7 +164,7 @@ proto =
     $tag = $select.parents('.tagla-tag')
     isNew = $tag.hasClass('tagla-tag-new')
     $tag.removeClass 'tagla-tag-choose tagla-tag-active tagla-tag-new'
-    data = $tag.data('tag-data')
+    data = $.extend({}, $tag.data('tag-data'))
     data.label = $select.find('option:selected').text()
     data.value = $select.val() || data.label
     serialize = $tag.find('.tagla-form').serialize()
@@ -180,12 +177,11 @@ proto =
     @log 'handleTagDelete() is executed'
     e.preventDefault()
     $tag = $(e.currentTarget).parents('.tagla-tag')
-    data = $tag.data('tag-data')
-    $tag.remove()
-    #$tag.fadeOut -> $tag.remove()
-    instance = $tag.data('draggabilly')
-    instance.destroy() if (instance)
-    @emit('delete', [data])
+    data = $.extend({}, $tag.data('tag-data'))
+    $tag.fadeOut =>
+      @_removeTools($tag)
+      $tag.remove()
+      @emit('delete', [data])
 
   handleTagEdit: (e) ->
     @log 'handleTagEdit() is executed'
@@ -196,7 +192,8 @@ proto =
     @wrapper.addClass('tagla-editing-selecting')
     @_disableDrag($tag)
     $tag.find('.tagla-select').trigger('chosen:open')
-    @emit('edit', [$tag.data('tag-data')])
+    data = $.extend({}, $tag.data('tag-data'))
+    @emit('edit', [data])
 
   handleTagMove: (instance, event, pointer) ->
     @log 'handleTagMove() is executed'
@@ -213,6 +210,7 @@ proto =
     serialize = $tag.find('.tagla-form').serialize()
 
     @lastDragTime = new Date()
+    data = $.extend({}, data)
     @emit('move', [data, serialize, $tag]) if data.id
 
   handleWrapperClick: (e) ->
@@ -249,8 +247,8 @@ proto =
     if isNew
       $('.tagla-tag').each ->
         if $(@).hasClass('tagla-tag-new') and !$(@).find('[name=tag]').val()
-          #$(@).fadeOut -> $(@).remove()
-          $(@).remove()
+          $(@).fadeOut ->
+            @_removeTools($tag)
 
     @wrapper.append($tag)
     if isNew # Default position for new tag
@@ -267,8 +265,8 @@ proto =
     offsetX = $tag.outerWidth() / 2
     offsetY = $tag.outerHeight() / 2
     $tag.css
-      left: "#{x - offsetX}px"
-      top: "#{y - offsetY}px"
+      'left': "#{x - offsetX}px"
+      'top': "#{y - offsetY}px"
     # Save tag data to data attr for easy access
     $tag.data('tag-data', tag)
     # Render tag editor tools
@@ -293,6 +291,14 @@ proto =
     $('.tagla-tag').each -> @_applyTools($(@))
     @editor = on
 
+  getTags: ->
+    @log 'getTags() is executed'
+    tags = []
+    $('.tagla-tag').each ->
+      data = $.extend({}, $(@).data('tag-data'))
+      tags.push $(@).data('tag-data')
+    tags
+
   # Shrink everything except the $except
   shrink: ($except = null) ->
     return if @editor is off
@@ -303,13 +309,15 @@ proto =
       return if $except[0] is @
       $tag = $(@)
       if $tag.hasClass('tagla-tag-new') and !$tag.find('[name=tag]').val()
-        #$tag.fadeOut -> $tag.remove()
-        $tag.remove()
+        $tag.fadeOut =>
+          $tag.remove()
+          @_removeTools($tag)
       $tag.removeClass 'tagla-tag-active tagla-tag-choose'
     @_enableDrag()
 
   updateDialog: ($tag, data) ->
-    data.form_html = @formHtml;
+    data = $.extend({}, $tag.data('tag-data'), data)
+    data.form_html = @formHtml
     html = $(Mustache.render(@tagTemplate, data)).find('.tagla-dialog').html()
     $tag.find('.tagla-dialog').html(html)
     $tag.data('tag-data', data)
@@ -358,15 +366,18 @@ proto =
       return
     @_updateImageSize(data) # Save dimension
     @wrapper.addClass 'tagla' # Apply necessary class names
-    @wrapper.addClass 'tagla-editing' if @editor
     @addTag tag for tag in @data # Create tags
+    setTimeout =>
+      @wrapper.addClass 'tagla-editing' if @editor
+      @emit('ready', [@])
+    , 500
 
   destroy: ->
     @log 'destroy() is executed'
     @wrapper.removeClass 'tagla tagla-editing'
     @wrapper.find('.tagla-tag').each ->
       $tag = $(@)
-      $tag.find('.tagla-select').chosen 'destroy'
+      $tag.find('.tagla-select').chosen2 'destroy'
       $tag.data('draggabilly').destroy()
       $tag.remove()
 
