@@ -9,16 +9,17 @@ HTTP_PORT       = 3333
 LIVERELOAD_PORT = 32717
 
 # Gulp plugins
-gulp       = require 'gulp'
-connect    = require 'gulp-connect'
-sass       = require 'gulp-sass'
-watch      = require 'gulp-watch'
-open       = require 'gulp-open'
-coffee     = require 'gulp-coffee'
-sourcemaps = require 'gulp-sourcemaps'
-concat     = require 'gulp-concat'
-uglify     = require 'gulp-uglify'
-uglifycss  = require 'gulp-uglifycss'
+gulp         = require 'gulp'
+connect      = require 'gulp-connect'
+sass         = require 'gulp-sass'
+watch        = require 'gulp-watch'
+open         = require 'gulp-open'
+coffee       = require 'gulp-coffee'
+sourcemaps   = require 'gulp-sourcemaps'
+concat       = require 'gulp-concat'
+uglify       = require 'gulp-uglify'
+uglifycss    = require 'gulp-uglifycss'
+autoprefixer = require 'gulp-autoprefixer'
 
 # Task - connect
 gulp.task 'connect', ->
@@ -39,6 +40,9 @@ gulp.task 'watch', ->
     .pipe watch(SASS_PATH)
     .pipe sourcemaps.init()
     .pipe sass(indentedSyntax: true)
+    .pipe autoprefixer
+      browsers: ['> 5%']
+      cascade: false
     .pipe sourcemaps.write()
     .pipe gulp.dest(CSS_PATH)
   gulp.src COFFEE_PATH
@@ -55,6 +59,9 @@ gulp.task 'watch', ->
 gulp.task 'build', ->
   gulp.src SASS_PATH
     .pipe sass(indentedSyntax: on)
+    .pipe autoprefixer
+      browsers: ['last 2 versions']
+      cascade: false
     .pipe concat('tagla.min.css')
     .pipe uglifycss()
     .pipe gulp.dest(OUTPUT_PATH)

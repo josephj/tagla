@@ -1,138 +1,111 @@
 @import '../fontcustom/font_stackla'
+@import 'chosen-override'
 
-@-webkit-keyframes fadein
+// Fade-in Effect
+@keyframes fadein
   from
     opacity: 0
-  to
+  to:
     opacity: 1
 
-.tagla-editing
-  use-select: none
+$tag-size: 48px
+$tag-color: #693
 
+// Editing Mode
+&.tagla-editing
+  user-select: none
+
+//=========
+// Dialog
+//=========
 .tagla-tag
-  background-color: rgba(#669933, 0.5)
-  border-radius: 48px
-  position: absolute
-  box-sizing: border-box
-  left: calc(100% - 48px)
-  top: 0
-  width: 48px
-  height: 48px
-  overflow: hidden
+  background-color: rgba($tag-color, 0.5)
   border: dashed 1px #fff
+  border-radius: $tag-size
+  box-sizing: border-box
+  height: $tag-size
+  left: calc(100% - 24px)
+  overflow: hidden
+  position: absolute
+  top: -24px
   text-align: center
-  vertical-align: middle
-  z-index: 0
   transition: all 0.5s
+  vertical-align: middle
+  width: $tag-size
+  z-index: 0
+
+  &:hover
+    background-color: $tag-color
+    box-shadow: 0 0 5px 1px rgba(#fff, 0.7)
+    overflow: visible
+
+  // Inner border
   &:before
     border: dotted 1px #316500
-    border-radius: 48px
+    border-radius: $tag-size
+    bottom: 0
     content: ''
     display: block
-    position: absolute
     left: 0
+    position: absolute
     right: 0
-    bottom: 0
     top: 0
     z-index: -1
 
-  // Normal Hover
-  &:hover,
-  &.tagla-tag-choose, &.tagla-tag-choose:hover
-    box-shadow: 0 0 5px 1px rgba(255, 255, 255, 0.7)
-    background-color: #693
-    overflow: visible
-    .tagla-editing &
-      z-index: 3
-  // Seleting Hover (Not the selected one)
-  .tagla-editing-selecting &:hover
-    background-color: rgba(#669933, 0.5)
-    box-shadow: none
-    overflow: hidden
-    .tagla-icon
-      cursor: default
-    .tagla-editing &
-      z-index: 0
-  // Seleting Hover (Not the selected one)
-  .tagla-editing-selecting &.tagla-tag-choose:hover
-    box-shadow: 0 0 5px 1px rgba(255, 255, 255, 0.7)
-    background-color: #693
-    overflow: visible
-    .tagla-editing &
-      z-index: 3
-    .tagla-icon
-      cursor: move
-
-  // Link
-  .tagla-tag-link
-    text-decoration: none
-    color: #333
-    font-weight: normal
-    display: inline-block
-    padding: 0 5px
-    &.tagla-tag-edit-link
-      color: #693
-    &.tagla-tag-delete-link
-      color: #d14835
-
-  // Editing Mode
-  .tagla-editing &
-    transition: all 0.1s linear
-    z-index: 1
-    &.tagla-tag-new
-      transition: none
-      -webkit-animation: fadein 0.5s
-      z-index: 2
-      &.is-dragging
-        transition: all 0.1s linear
-
+// Icon
 .tagla-icon
   color: #fff
   font-size: 30px
   line-height: 48px
   &:before
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5)
-  .tagla-editing &
-    cursor: move
+    text-shadow: 0 1px 1px rgba(#000, 0.5)
+
+// Link
+.tagla-tag-link
+  text-decoration: none
+  color: #333
+  font-weight: normal
+  display: inline-block
+  padding: 0 5px
+  &.tagla-tag-edit-link
+    color: #693
+  &.tagla-tag-delete-link
+    color: #d14835
 
 //=========
 // Dialog
 //=========
 .tagla-dialog
   background: #fff
-  opacity: 0
-  color: #333
   box-shadow: 1px 1px 2px rgba(black, 0.6)
+  color: #333
+  display: block
   margin-top: 3px
   min-height: 100px
-  display: block
+  opacity: 0
   padding: 20px 19px
   position: absolute
   text-align: left
   left: 0
   top: 100%
-  width: 480px
   transition: all 0.5s
   z-index: 1
+  width: 480px
   &:before
+    background: transparent
     content: ''
-    position: absolute;
+    height: 10px
     left: 0
+    position: absolute;
     right: 0
     top: -10px
-    height: 10px
-    background: transparent
   .tagla-tag:hover &
     opacity: 1
-    z-index: 1
-  .tagla-editing .tagla-tag-choose &,
-  .tagla-editing .tagla-tag.is-dragging &
-    opacity: 0
 
 .tagla-dialog-image
-  max-width: 220px
   float: left
   margin-right: 17px
+  max-width: 220px
 
 .tagla-dialog-text
   display: table
@@ -145,120 +118,102 @@
   font-size: 16px
 
 .tagla-dialog-description
-  margin: 12px 0
   font-size: 12px
+  margin: 12px 0
   text-align: left
 
 .tagla-dialog-button
-  position: static
-  display: inline-block
   background: #659a2a
   border-radius: 3px
   color: #fff
+  display: inline-block
   font-style: normal
   font-weight: bold
   padding: 15px 20px
+  position: static
   text-decoration: none
-
 
 //=========
 // Form
 //=========
 .tagla-form
+  left: 0
+  opacity: 0
   position: absolute
   text-align: left
-  left: 0
   top: 100%
-  opacity: 0
   transition: all 0.5s
-  .tagla-tag.tagla-tag-choose &
-    z-index: 1
-    opacity: 1
-  .tagla-editing .tagla-tag.is-dragging &
-    opacity: 0
 
 .tagla-form-title
   background: #404040
-  position: relative
   border: none
-  color: #fff
-  padding: 10px 20px
-  font-size: 14px
-  height: auto
-  font-weight: bold
   border-top-left-radius: 4px
   border-top-right-radius: 4px
+  color: #fff
+  font-size: 14px
+  font-weight: bold
+  height: auto
+  padding: 10px 20px
+  position: relative
   top: 10px
 
 .tagla-form-close
-  position: absolute
   border-radius: 19px
   font-size: 22px
   font-weight: bold
+  position: absolute
   right: 20px
   top: 3px
   text-decoration: none
   &:link, &:visited
     color: #fff
 
-.tagla
-  .chosen-container-single .chosen-single
-    display: none
+//===========================
+// Editor Mode (None Active)
+//===========================
+// Has none active tag
+.tagla-editing .tagla-tag
+  // Default
+  transition: all 0.1s linear
+  &:hover
+    z-index: 1
+  .tagla-icon
+    cursor: move
+  // Dragging
+  &.is-dragging
+    background-color: $tag-color
+    transition: all 0.1s linear
+    .tagla-dialog
+      opacity: 0
+  // New tag (fade-in)
+  &.tagla-tag-new
+    transition: none
+    animation: fadein 0.5s
+    z-index: 2
 
-  .chosen-container
-    width: 310px
-
-  .chosen-container-active.chosen-with-drop .chosen-single
-    background: #404040
-    border: none
-    color: #fff
-    padding: 10px 20px
-    font-size: 14px
-    height: auto
-    span
-      font-weight: bold
-
-  .chosen-container-single .chosen-search input[type=text]
-    background: none
-    border-width: 0 0 1px
-    border-color: #ccc
-    padding: 10px 15px
-    margin: 0
-
-  .chosen-container-single .chosen-search
-    padding: 0
-
-  .chosen-container .chosen-results
-    padding: 10px
-    margin: 0
-
-  .chosen-container-active.chosen-with-drop .chosen-single
-    box-shadow: none
-    display: none
-
-  .chosen-container .chosen-results li
-    white-space: nowrap
-    padding: 15px 10px
-    font-size: 12px
-    margin-bottom: 1px
-
-  .chosen-container .chosen-results li em,
-  .chosen-container .chosen-results li.result-selected
-    font-weight: bold
-
-  .chosen-container .chosen-results li.highlighted
-    background-color: transparent
-    background-image: none
-    color: #444;
-
-  .chosen-container .chosen-results li.result-selected,
-  .chosen-container .chosen-results li:hover
-    background: #cfe8f5
-    color: #333
-
-  .chosen-container-single .chosen-search input[type=text]
-    background-image: none !important
-
-  .chosen-container-single .chosen-drop
-    margin-top: -3px
+// Has one active tag
+.tagla-editing.tagla-editing-selecting .tagla-tag
+  // Default - Not Editable
+  background-color: rgba($tag-color, 0.5)
+  box-shadow: none
+  overflow: hidden
+  z-index: 0
+  .tagla-icon
+    cursor: default
+  // Active
+  &.tagla-tag-choose
+    background-color: $tag-color
+    box-shadow: 0 0 5px 1px rgba(#fff, 0.7)
+    overflow: visible
+    z-index: 3
+    .tagla-icon
+      cursor: move
+    .tagla-form
+      opacity: 1
+      z-index: 1
+    .tagla-dialog
+      opacity: 0
+  // Dragging
+  &.is-dragging .tagla-form
+    opacity: 0
 

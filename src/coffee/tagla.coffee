@@ -9,10 +9,11 @@ ATTRS =
     placeholder_text_single: 'Select an option'
     width: '310px'
   FORM_TEMPLATE: [
+    '<div class="tagla-form-wrapper">'
     '    <form class="tagla-form">'
     '        <div class="tagla-form-title">'
-    '          Select Your Product'
-    '          <a href="javascript:void(0);" class="tagla-form-close">×</a>'
+    '            Select Your Product'
+    '            <a href="javascript:void(0);" class="tagla-form-close">×</a>'
     '        </div>'
     '        <input type="hidden" name="x">'
     '        <input type="hidden" name="y">'
@@ -23,6 +24,7 @@ ATTRS =
     '            <option value="3">Buddy</option>'
     '        </select>'
     '    </form>'
+    '</div>'
   ].join('\n')
   TAG_TEMPLATE: [
     '<div class="tagla-tag">'
@@ -247,7 +249,7 @@ proto =
     if isNew
       $('.tagla-tag').each ->
         if $(@).hasClass('tagla-tag-new') and !$(@).find('[name=tag]').val()
-          $(@).fadeOut ->
+          $(@).fadeOut =>
             @_removeTools($tag)
 
     @wrapper.append($tag)
@@ -305,9 +307,9 @@ proto =
     @log 'shrink() is executed'
     $except = $($except)
     @wrapper.removeClass 'tagla-editing-selecting'
-    $('.tagla-tag').each ->
-      return if $except[0] is @
-      $tag = $(@)
+    $('.tagla-tag').each (i, el) =>
+      return if $except[0] is el
+      $tag = $(el)
       if $tag.hasClass('tagla-tag-new') and !$tag.find('[name=tag]').val()
         $tag.fadeOut =>
           $tag.remove()
@@ -325,7 +327,8 @@ proto =
   unedit: ->
     return if @edit is off
     @log 'unedit() is executed'
-    $('.tagla-tag').each -> @_removeTools($(@))
+    $('.tagla-tag').each (i, el) =>
+      @_removeTools($(el))
     @wrapper.removeClass 'tagla-editing'
     @editor = off
 
@@ -355,6 +358,7 @@ proto =
 
   render: ->
     @log 'render() is executed'
+    @image.attr('draggable', false)
     @imageSize = Stackla.getImageSize(@image, $.proxy(@renderFn, @))
     @imageSize.on('change', $.proxy(@handleImageResize, @))
 
