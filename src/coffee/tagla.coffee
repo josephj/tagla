@@ -306,7 +306,6 @@ proto =
     return if @editor is off
     @log 'shrink() is executed'
     $except = $($except)
-    @wrapper.removeClass 'tagla-editing-selecting'
     $('.tagla-tag').each (i, el) =>
       return if $except[0] is el
       $tag = $(el)
@@ -315,6 +314,7 @@ proto =
           $tag.remove()
           @_removeTools($tag)
       $tag.removeClass 'tagla-tag-active tagla-tag-choose'
+    @wrapper.removeClass 'tagla-editing-selecting'
     @_enableDrag()
 
   updateDialog: ($tag, data) ->

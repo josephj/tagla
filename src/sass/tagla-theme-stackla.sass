@@ -57,6 +57,9 @@ $tag-color: #693
   color: #fff
   font-size: 30px
   line-height: 48px
+  position: absolute
+  left: 8px
+  top: 0
   &:before
     text-shadow: 0 1px 1px rgba(#000, 0.5)
 
@@ -182,6 +185,7 @@ $tag-color: #693
   // Dragging
   &.is-dragging
     background-color: $tag-color
+    box-shadow: 0 0 5px 1px rgba(#fff, 0.7)
     transition: all 0.1s linear
     .tagla-dialog
       opacity: 0
