@@ -11,7 +11,6 @@ class ImageSize extends Stackla.Base
 
   init: (el) ->
     @el = $(el)[0]
-    @debug = on
     @complete = @el.complete
     @data = {}
     @_timer = null
@@ -19,17 +18,18 @@ class ImageSize extends Stackla.Base
     @data.height = @el.height
 
   bind: ->
+    @log 'bind() is executed'
     # Keep an eye on resize event
     $(window).resize (e) =>
       isEqual = @el.width is @data.width and @el.height is @data.height
       return if isEqual
-      @log 'bind() is executed'
       $.extend @data, {
         width: @el.width
         height: @el.height
         widthRatio: @el.width / @data.naturalWidth
         heightRatio: @el.height / @data.naturalHeight
       }
+      @log 'handleResize() is executed'
       @.emit('change', [@data])
 
   render: (callback) ->

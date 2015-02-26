@@ -132,7 +132,7 @@ proto =
     @log '_getPosition() is executed'
     pos = $tag.position()
     x = (pos.left + ($tag.width() / 2)) / @currentWidth * @naturalWidth
-    y = (pos.top + ($tag.height() / 2)) / @currentHeight * @naturalWidth
+    y = (pos.top + ($tag.height() / 2)) / @currentHeight * @naturalHeight
     if @unit is 'percent'
       x = x / @naturalWidth * 100
       y = y / @naturalHeight * 100
