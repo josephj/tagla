@@ -45,7 +45,7 @@ ATTRS =
     '              <i class="fs fs-cross3"></i> Delete'
     '            </a>'
     '          </div>'
-    '          <h2 class="tagla-dialog-title">{{slug}}</h2>'
+    '          <h2 class="tagla-dialog-title">{{tag}}</h2>'
     '          {{#price}}'
     '          <div class="tagla-dialog-price">{{price}}</div>'
     '          {{/price}}'

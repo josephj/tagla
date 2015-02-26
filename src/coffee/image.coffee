@@ -1,21 +1,46 @@
 class ImageSize extends Stackla.Base
+
   constructor: (el, callback) ->
     super()
+    @init(el)
+    @bind()
+    @render(callback)
+    return @
+
+  toString: () -> 'ImageSize'
+
+  init: (el) ->
     @el = $(el)[0]
     @debug = on
     @complete = @el.complete
-    @data =
-      width: @el.width
-      height: @el.height
-      naturalWidth: null
-      naturalHeight: null
+    @data = {}
     @_timer = null
+    @data.width = @el.width
+    @data.height = @el.height
+
+  bind: ->
+    # Keep an eye on resize event
+    $(window).resize (e) =>
+      isEqual = @el.width is @data.width and @el.height is @data.height
+      return if isEqual
+      @log 'bind() is executed'
+      $.extend @data, {
+        width: @el.width
+        height: @el.height
+        widthRatio: @el.width / @data.naturalWidth
+        heightRatio: @el.height / @data.naturalHeight
+      }
+      @.emit('change', [@data])
+
+  render: (callback) ->
+    @log 'render() is executed'
     # Image Loaded
     if @complete
-      @log "Image '#{@el.src}' is ready"
       img = new Image()
       img.src = @el.src
-      $.extend @data, {naturalWidth: img.width, naturalHeight: img.height}
+      @log "Image '#{@el.src}' is loaded"
+      @data.naturalWidth = img.width
+      @data.naturalHeight = img.height
       callback(true, @data)
     # Image Loading
     else
@@ -24,29 +49,15 @@ class ImageSize extends Stackla.Base
       img.src = @el.src
       img.onload = (e) =>
         @log "Image '#{img.src}' is loaded"
-        $.extend @data, {naturalWidth: img.width, naturalHeight: img.height}
+        @data.naturalWidth = img.width
+        @data.naturalHeight = img.height
         callback(true, @data)
       img.onerror = (e) =>
         @log "Image '#{img.src}' is failed to load"
         callback(false, @data)
 
-    # Keep an eye on resize event
-    $(window).resize (e) =>
-      window.clearTimeout(@_timer) if @_timer
-      @_timer = window.setTimeout =>
-        isEqual = @el.width is @data.width and @el.height is @data.height
-        return if isEqual
-        $.extend @data, {
-          width: @el.width
-          height: @el.height
-          widthRatio: @el.width / @data.naturalWidth
-          heightRatio: @el.height / @data.naturalHeight
-        }
-        @.emit('change', [@data])
-        @_timer = null
-      , 100
-    return @
-  toString: () -> 'ImageSize'
 
 window.Stackla = {} unless window.Stackla
-Stackla.getImageSize = (el, callback) -> new ImageSize(el, callback)
+
+Stackla.getImageSize = (el, callback) ->
+  new ImageSize(el, callback)
