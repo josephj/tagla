@@ -28,7 +28,7 @@ ATTRS =
   ].join('\n')
   TAG_TEMPLATE: [
     '<div class="tagla-tag">'
-    '    <i class="tagla-icon fs fs-tag"></i>'
+    '    <i class="tagla-icon fs fs-tag2"></i>'
     '    <div class="tagla-dialog">'
     '    {{#product}}'
     '        {{#image_small_url}}'
