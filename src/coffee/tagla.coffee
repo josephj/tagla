@@ -66,7 +66,7 @@ ATTRS =
   ].join('\n')
   NEW_TAG_TEMPLATE: [
     '<div class="tagla-tag">'
-    '    <i class="tagla-icon fs fs-tag"></i>'
+    '    <i class="tagla-icon fs fs-tag2"></i>'
     '    <span class="tagla-label">{{label}}</span>'
     '</div>'
   ].join('\n')
