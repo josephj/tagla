@@ -33,7 +33,7 @@ $tag-color: #693
   width: $tag-size
   z-index: 0
 
-  &:hover
+  &.tagla-tag-hover
     background-color: $tag-color
     box-shadow: 0 0 5px 1px rgba(#fff, 0.7)
     overflow: visible
@@ -101,7 +101,7 @@ $tag-color: #693
     position: absolute;
     right: 0
     top: -10px
-  .tagla-tag:hover &
+  .tagla-tag.tagla-tag-hover &
     opacity: 1
 
 .tagla-dialog-image
@@ -211,7 +211,7 @@ $tag-color: #693
 .tagla-editing .tagla-tag
   // Default
   transition: all 0.1s linear
-  &:hover
+  &.tagla-tag-hover
     z-index: 1
   .tagla-icon
     cursor: move
@@ -256,4 +256,8 @@ $tag-color: #693
   // Dragging
   &.is-dragging .tagla-form
     opacity: 0
+
+// Disable transition when it's Safari (Dragging is jerky)
+.tagla.tagla-editing.tagla-safari .tagla-tag
+  transition: none !important
 

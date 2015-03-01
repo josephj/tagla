@@ -67,7 +67,6 @@ ATTRS =
   NEW_TAG_TEMPLATE: [
     '<div class="tagla-tag">'
     '    <i class="tagla-icon fs fs-tag2"></i>'
-    '    <span class="tagla-label">{{label}}</span>'
     '</div>'
   ].join('\n')
 
@@ -215,6 +214,32 @@ proto =
     data = $.extend({}, data)
     @emit('move', [data, serialize, $tag]) if data.id
 
+  handleTagMouseEnter: (e) ->
+    @log 'handleTagMouseEnter'
+    $tag = $(e.currentTarget)
+
+    # Clear delayed leave timer
+    timer =  $tag.data('timer')
+    clearTimeout(timer) if timer
+    $tag.removeData('timer')
+
+    $tag.addClass('tagla-tag-hover')
+
+  handleTagMouseLeave: (e) ->
+    @log 'handleTagMouseLeave'
+    $tag = $(e.currentTarget)
+
+    # Clear delayed leave timer
+    timer = $tag.data('timer')
+    clearTimeout(timer) if timer
+    $tag.removeData('timer')
+
+    # Save delayed leave timer
+    timer = setTimeout ->
+      $tag.removeClass('tagla-tag-hover')
+    , 300
+    $tag.data('timer', timer)
+
   handleWrapperClick: (e) ->
     @log 'handleWrapperClick() is executed'
     # Hack to avoid triggering click event
@@ -355,6 +380,8 @@ proto =
       .on 'click', $.proxy(@handleWrapperClick, @)
       .on 'click', '.tagla-tag-edit-link', $.proxy(@handleTagEdit, @)
       .on 'click', '.tagla-tag-delete-link', $.proxy(@handleTagDelete, @)
+      .on 'mouseenter', '.tagla-tag', $.proxy(@handleTagMouseEnter, @)
+      .on 'mouseleave', '.tagla-tag', $.proxy(@handleTagMouseLeave, @)
 
   render: ->
     @log 'render() is executed'
@@ -364,12 +391,15 @@ proto =
 
   renderFn: (success, data) ->
     @log 'renderFn() is executed'
+    isSafari = /Safari/.test(navigator.userAgent) and
+               /Apple Computer/.test(navigator.vendor)
     unless success # Stop if image is failed to load
       @log("Failed to load image: #{@image.attr('src')}", 'error')
       @destroy()
       return
     @_updateImageSize(data) # Save dimension
     @wrapper.addClass 'tagla' # Apply necessary class names
+    @wrapper.addClass 'tagla-safari' if isSafari # Avoid animation
     @addTag tag for tag in @data # Create tags
     setTimeout =>
       @wrapper.addClass 'tagla-editing' if @editor

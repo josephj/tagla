@@ -45,12 +45,18 @@ gulp.task 'watch', ->
       cascade: false
     .pipe sourcemaps.write()
     .pipe gulp.dest(CSS_PATH)
+    .pipe concat('tagla.min.css')
+    .pipe uglifycss()
+    .pipe gulp.dest(OUTPUT_PATH)
   gulp.src COFFEE_PATH
     .pipe watch(COFFEE_PATH)
     .pipe sourcemaps.init()
-    .pipe coffee().on('error', (err) ->)
+    .pipe coffee().on('error', (err) -> console.log(err.message))
     .pipe sourcemaps.write()
     .pipe gulp.dest(JS_PATH)
+    .pipe concat('tagla.min.js')
+    .pipe uglify()
+    .pipe gulp.dest(OUTPUT_PATH)
   gulp.src [HTML_PATH, SASS_PATH, COFFEE_PATH]
     .pipe watch([HTML_PATH, SASS_PATH, COFFEE_PATH])
     .pipe connect.reload()
