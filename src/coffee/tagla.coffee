@@ -90,6 +90,7 @@ proto =
   ##################
   # Initialize drag and select libs for a single tag
   _applyTools: ($tag) ->
+    @log '_applyTools() is executed'
     drag = new Draggabilly($tag[0], Tagla.DRAG_ATTR)
     drag.on 'dragEnd', $.proxy(@handleTagMove, @)
     $tag.data('draggabilly', drag)
@@ -194,7 +195,7 @@ proto =
     @_disableDrag($tag)
     $tag.find('.tagla-select').trigger('chosen:open')
     data = $.extend({}, $tag.data('tag-data'))
-    @emit('edit', [data])
+    @emit('edit', [data, $tag])
 
   handleTagMove: (instance, event, pointer) ->
     @log 'handleTagMove() is executed'
@@ -212,7 +213,8 @@ proto =
 
     @lastDragTime = new Date()
     data = $.extend({}, data)
-    @emit('move', [data, serialize, $tag]) if data.id
+    isNew = if data.id then no else yes
+    @emit('move', [data, serialize, $tag, isNew])
 
   handleTagMouseEnter: (e) ->
     @log 'handleTagMouseEnter'
@@ -224,6 +226,7 @@ proto =
     $tag.removeData('timer')
 
     $tag.addClass('tagla-tag-hover')
+    @emit('hover', [$tag])
 
   handleTagMouseLeave: (e) ->
     @log 'handleTagMouseLeave'
@@ -306,6 +309,7 @@ proto =
           @wrapper.addClass('tagla-editing-selecting')
           $tag.find('.tagla-select').trigger 'chosen:open'
           @_disableDrag($tag)
+          @emit('new', [$tag])
         , 100
 
   deleteTag: ($tag) ->

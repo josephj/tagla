@@ -15,7 +15,7 @@ $tag-color: #693
   user-select: none
 
 //=========
-// Dialog
+// Tag
 //=========
 .tagla-tag
   background-color: rgba($tag-color, 0.5)
@@ -90,7 +90,7 @@ $tag-color: #693
   text-align: left
   left: 0
   top: 100%
-  transition: all 0.5s
+  transition: opacity 0.5s
   z-index: 1
   width: 480px
   &:before
@@ -167,7 +167,7 @@ $tag-color: #693
   position: absolute
   text-align: left
   top: 100%
-  transition: all 0.5s
+  transition: opacity 0.5s
 
 .tagla-form-title
   background: #404040
@@ -215,6 +215,7 @@ $tag-color: #693
     z-index: 1
   .tagla-icon
     cursor: move
+    z-index: 1
   // Dragging
   &.is-dragging
     background-color: $tag-color
@@ -258,6 +259,7 @@ $tag-color: #693
     opacity: 0
 
 // Disable transition when it's Safari (Dragging is jerky)
-.tagla.tagla-editing.tagla-safari .tagla-tag
+//.tagla.tagla-editing.tagla-safari .tagla-tag
+.tagla.tagla-editing .tagla-tag
   transition: none !important
 
