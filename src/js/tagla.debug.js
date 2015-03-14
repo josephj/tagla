@@ -444,3 +444,5 @@
   window.Stackla.Tagla = Tagla;
 
 }).call(this);
+
+//# sourceMappingURL=tagla.debug.js.map
