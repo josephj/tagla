@@ -1,6 +1,5 @@
 var SRC_PATH  = './src/',
     COFFEE_PATH = SRC_PATH + 'coffee/',
-    JS_PATH = SRC_PATH + 'js/',
     SASS_PATH = SRC_PATH + 'sass/',
     DIST_PATH = './dist/',
     TEST_PATH = './tests/',
@@ -25,27 +24,20 @@ module.exports = function (grunt) {
                 dest: DIST_PATH + 'tagla.css'
             }
         },
-        coffee: {
-            debug: {
-                options: {sourceMap: true},
-                src: COFFEE_PATH + 'tagla.coffee',
-                dest: JS_PATH + 'tagla.debug.js'
+        browserify: {
+            options: {
+                transform: ['coffeeify'],
+                banner: "// DON'T MODIFY THIS FILE!\n// MODIFY ITS SOURCE FILE!"
             },
-            build: {
-                options: {sourceMap: false},
-                src: COFFEE_PATH + 'tagla.coffee',
-                dest: JS_PATH + 'tagla.js'
-            }
-        },
-        concat: {
             debug: {
-                options: {sourceMap: true},
-                src: [JS_PATH + 'base.js', JS_PATH + 'image.js', JS_PATH + 'tagla.debug.js'],
+                options: {
+                    browserifyOptions: {debug: true}
+                },
+                src: COFFEE_PATH + 'tagla.coffee',
                 dest: DIST_PATH + 'tagla.debug.js'
             },
             build: {
-                options: {sourceMap: false},
-                src: [JS_PATH + 'base.js', JS_PATH + 'image.js', JS_PATH + 'tagla.js'],
+                src: COFFEE_PATH + 'tagla.coffee',
                 dest: DIST_PATH + 'tagla.js'
             }
         },
@@ -96,7 +88,7 @@ module.exports = function (grunt) {
             },
             coffee: {
                 files: [COFFEE_PATH + '*.coffee'],
-                tasks: ['coffee:debug', 'concat:debug']
+                tasks: ['browserify:debug']
             },
             sass: {
                 files: [SASS_PATH + '*.sass'],
@@ -113,8 +105,8 @@ module.exports = function (grunt) {
 
     // Packages
     grunt.loadNpmTasks('grunt-autoprefixer');
+    grunt.loadNpmTasks('grunt-browserify');
     grunt.loadNpmTasks('grunt-contrib-coffee');
-    grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-connect');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-sass');
@@ -123,16 +115,14 @@ module.exports = function (grunt) {
 
     // Tasks
     grunt.registerTask('build', [
-        'coffee:build',
-        'concat:build',
+        'browserify:build',
         'uglify:build',
         'sass:build',
         'autoprefixer:build',
         'cssmin:build'
     ]);
     grunt.registerTask('build:debug', [
-        'coffee:debug',
-        'concat:debug',
+        'browserify:debug',
         'sass:debug',
         'autoprefixer:debug'
     ]);

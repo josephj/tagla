@@ -10,11 +10,18 @@
   },
   "author": "josephj <josephj6802@gmail.com>",
   "license": "MIT",
+  "dependencies": {
+    "mustache": "^1.1.0"
+  },
   "devDependencies": {
+    "browserify": "^9.0.3",
+    "browserify-shim": "^3.8.3",
     "coffee-script": "^1.8.0",
+    "coffeeify": "^1.0.0",
     "connect": "^3.3.4",
     "grunt": "^0.4.5",
     "grunt-autoprefixer": "^2.2.0",
+    "grunt-browserify": "^3.5.0",
     "grunt-contrib-coffee": "^0.13.0",
     "grunt-contrib-concat": "^0.5.1",
     "grunt-contrib-connect": "^0.9.0",
@@ -22,5 +29,13 @@
     "grunt-contrib-uglify": "^0.8.0",
     "grunt-contrib-watch": "^0.6.1",
     "grunt-sass": "^0.18.1"
+  },
+  "browserify-shim": {
+    "jquery": "global:$"
+  },
+  "browserify": {
+    "transform": [
+      "browserify-shim"
+    ]
   }
 }

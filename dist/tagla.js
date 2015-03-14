@@ -1,655 +1,1261 @@
+// DON'T MODIFY THIS FILE!
+// MODIFY ITS SOURCE FILE!
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/*!
+ * mustache.js - Logic-less {{mustache}} templates with JavaScript
+ * http://github.com/janl/mustache.js
+ */
+
+/*global define: false*/
+
+(function (global, factory) {
+  if (typeof exports === "object" && exports) {
+    factory(exports); // CommonJS
+  } else if (typeof define === "function" && define.amd) {
+    define(['exports'], factory); // AMD
+  } else {
+    factory(global.Mustache = {}); // <script>
+  }
+}(this, function (mustache) {
+
+  var Object_toString = Object.prototype.toString;
+  var isArray = Array.isArray || function (object) {
+    return Object_toString.call(object) === '[object Array]';
+  };
+
+  function isFunction(object) {
+    return typeof object === 'function';
+  }
+
+  function escapeRegExp(string) {
+    return string.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
+  }
+
+  // Workaround for https://issues.apache.org/jira/browse/COUCHDB-577
+  // See https://github.com/janl/mustache.js/issues/189
+  var RegExp_test = RegExp.prototype.test;
+  function testRegExp(re, string) {
+    return RegExp_test.call(re, string);
+  }
+
+  var nonSpaceRe = /\S/;
+  function isWhitespace(string) {
+    return !testRegExp(nonSpaceRe, string);
+  }
+
+  var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+  };
+
+  function escapeHtml(string) {
+    return String(string).replace(/[&<>"'\/]/g, function (s) {
+      return entityMap[s];
+    });
+  }
+
+  var whiteRe = /\s*/;
+  var spaceRe = /\s+/;
+  var equalsRe = /\s*=/;
+  var curlyRe = /\s*\}/;
+  var tagRe = /#|\^|\/|>|\{|&|=|!/;
+
+  /**
+   * Breaks up the given `template` string into a tree of tokens. If the `tags`
+   * argument is given here it must be an array with two string values: the
+   * opening and closing tags used in the template (e.g. [ "<%", "%>" ]). Of
+   * course, the default is to use mustaches (i.e. mustache.tags).
+   *
+   * A token is an array with at least 4 elements. The first element is the
+   * mustache symbol that was used inside the tag, e.g. "#" or "&". If the tag
+   * did not contain a symbol (i.e. {{myValue}}) this element is "name". For
+   * all text that appears outside a symbol this element is "text".
+   *
+   * The second element of a token is its "value". For mustache tags this is
+   * whatever else was inside the tag besides the opening symbol. For text tokens
+   * this is the text itself.
+   *
+   * The third and fourth elements of the token are the start and end indices,
+   * respectively, of the token in the original template.
+   *
+   * Tokens that are the root node of a subtree contain two more elements: 1) an
+   * array of tokens in the subtree and 2) the index in the original template at
+   * which the closing tag for that section begins.
+   */
+  function parseTemplate(template, tags) {
+    if (!template)
+      return [];
+
+    var sections = [];     // Stack to hold section tokens
+    var tokens = [];       // Buffer to hold the tokens
+    var spaces = [];       // Indices of whitespace tokens on the current line
+    var hasTag = false;    // Is there a {{tag}} on the current line?
+    var nonSpace = false;  // Is there a non-space char on the current line?
+
+    // Strips all whitespace tokens array for the current line
+    // if there was a {{#tag}} on it and otherwise only space.
+    function stripSpace() {
+      if (hasTag && !nonSpace) {
+        while (spaces.length)
+          delete tokens[spaces.pop()];
+      } else {
+        spaces = [];
+      }
+
+      hasTag = false;
+      nonSpace = false;
+    }
+
+    var openingTagRe, closingTagRe, closingCurlyRe;
+    function compileTags(tags) {
+      if (typeof tags === 'string')
+        tags = tags.split(spaceRe, 2);
+
+      if (!isArray(tags) || tags.length !== 2)
+        throw new Error('Invalid tags: ' + tags);
+
+      openingTagRe = new RegExp(escapeRegExp(tags[0]) + '\\s*');
+      closingTagRe = new RegExp('\\s*' + escapeRegExp(tags[1]));
+      closingCurlyRe = new RegExp('\\s*' + escapeRegExp('}' + tags[1]));
+    }
+
+    compileTags(tags || mustache.tags);
+
+    var scanner = new Scanner(template);
+
+    var start, type, value, chr, token, openSection;
+    while (!scanner.eos()) {
+      start = scanner.pos;
+
+      // Match any text between tags.
+      value = scanner.scanUntil(openingTagRe);
+
+      if (value) {
+        for (var i = 0, valueLength = value.length; i < valueLength; ++i) {
+          chr = value.charAt(i);
+
+          if (isWhitespace(chr)) {
+            spaces.push(tokens.length);
+          } else {
+            nonSpace = true;
+          }
+
+          tokens.push([ 'text', chr, start, start + 1 ]);
+          start += 1;
+
+          // Check for whitespace on the current line.
+          if (chr === '\n')
+            stripSpace();
+        }
+      }
+
+      // Match the opening tag.
+      if (!scanner.scan(openingTagRe))
+        break;
+
+      hasTag = true;
+
+      // Get the tag type.
+      type = scanner.scan(tagRe) || 'name';
+      scanner.scan(whiteRe);
+
+      // Get the tag value.
+      if (type === '=') {
+        value = scanner.scanUntil(equalsRe);
+        scanner.scan(equalsRe);
+        scanner.scanUntil(closingTagRe);
+      } else if (type === '{') {
+        value = scanner.scanUntil(closingCurlyRe);
+        scanner.scan(curlyRe);
+        scanner.scanUntil(closingTagRe);
+        type = '&';
+      } else {
+        value = scanner.scanUntil(closingTagRe);
+      }
+
+      // Match the closing tag.
+      if (!scanner.scan(closingTagRe))
+        throw new Error('Unclosed tag at ' + scanner.pos);
+
+      token = [ type, value, start, scanner.pos ];
+      tokens.push(token);
+
+      if (type === '#' || type === '^') {
+        sections.push(token);
+      } else if (type === '/') {
+        // Check section nesting.
+        openSection = sections.pop();
+
+        if (!openSection)
+          throw new Error('Unopened section "' + value + '" at ' + start);
+
+        if (openSection[1] !== value)
+          throw new Error('Unclosed section "' + openSection[1] + '" at ' + start);
+      } else if (type === 'name' || type === '{' || type === '&') {
+        nonSpace = true;
+      } else if (type === '=') {
+        // Set the tags for the next time around.
+        compileTags(value);
+      }
+    }
+
+    // Make sure there are no open sections when we're done.
+    openSection = sections.pop();
+
+    if (openSection)
+      throw new Error('Unclosed section "' + openSection[1] + '" at ' + scanner.pos);
+
+    return nestTokens(squashTokens(tokens));
+  }
+
+  /**
+   * Combines the values of consecutive text tokens in the given `tokens` array
+   * to a single token.
+   */
+  function squashTokens(tokens) {
+    var squashedTokens = [];
+
+    var token, lastToken;
+    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+      token = tokens[i];
+
+      if (token) {
+        if (token[0] === 'text' && lastToken && lastToken[0] === 'text') {
+          lastToken[1] += token[1];
+          lastToken[3] = token[3];
+        } else {
+          squashedTokens.push(token);
+          lastToken = token;
+        }
+      }
+    }
+
+    return squashedTokens;
+  }
+
+  /**
+   * Forms the given array of `tokens` into a nested tree structure where
+   * tokens that represent a section have two additional items: 1) an array of
+   * all tokens that appear in that section and 2) the index in the original
+   * template that represents the end of that section.
+   */
+  function nestTokens(tokens) {
+    var nestedTokens = [];
+    var collector = nestedTokens;
+    var sections = [];
+
+    var token, section;
+    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+      token = tokens[i];
+
+      switch (token[0]) {
+      case '#':
+      case '^':
+        collector.push(token);
+        sections.push(token);
+        collector = token[4] = [];
+        break;
+      case '/':
+        section = sections.pop();
+        section[5] = token[2];
+        collector = sections.length > 0 ? sections[sections.length - 1][4] : nestedTokens;
+        break;
+      default:
+        collector.push(token);
+      }
+    }
+
+    return nestedTokens;
+  }
+
+  /**
+   * A simple string scanner that is used by the template parser to find
+   * tokens in template strings.
+   */
+  function Scanner(string) {
+    this.string = string;
+    this.tail = string;
+    this.pos = 0;
+  }
+
+  /**
+   * Returns `true` if the tail is empty (end of string).
+   */
+  Scanner.prototype.eos = function () {
+    return this.tail === "";
+  };
+
+  /**
+   * Tries to match the given regular expression at the current position.
+   * Returns the matched text if it can match, the empty string otherwise.
+   */
+  Scanner.prototype.scan = function (re) {
+    var match = this.tail.match(re);
+
+    if (!match || match.index !== 0)
+      return '';
+
+    var string = match[0];
+
+    this.tail = this.tail.substring(string.length);
+    this.pos += string.length;
+
+    return string;
+  };
+
+  /**
+   * Skips all text until the given regular expression can be matched. Returns
+   * the skipped string, which is the entire tail if no match can be made.
+   */
+  Scanner.prototype.scanUntil = function (re) {
+    var index = this.tail.search(re), match;
+
+    switch (index) {
+    case -1:
+      match = this.tail;
+      this.tail = "";
+      break;
+    case 0:
+      match = "";
+      break;
+    default:
+      match = this.tail.substring(0, index);
+      this.tail = this.tail.substring(index);
+    }
+
+    this.pos += match.length;
+
+    return match;
+  };
+
+  /**
+   * Represents a rendering context by wrapping a view object and
+   * maintaining a reference to the parent context.
+   */
+  function Context(view, parentContext) {
+    this.view = view == null ? {} : view;
+    this.cache = { '.': this.view };
+    this.parent = parentContext;
+  }
+
+  /**
+   * Creates a new context using the given view with this context
+   * as the parent.
+   */
+  Context.prototype.push = function (view) {
+    return new Context(view, this);
+  };
+
+  /**
+   * Returns the value of the given name in this context, traversing
+   * up the context hierarchy if the value is absent in this context's view.
+   */
+  Context.prototype.lookup = function (name) {
+    var cache = this.cache;
+
+    var value;
+    if (name in cache) {
+      value = cache[name];
+    } else {
+      var context = this, names, index;
+
+      while (context) {
+        if (name.indexOf('.') > 0) {
+          value = context.view;
+          names = name.split('.');
+          index = 0;
+
+          while (value != null && index < names.length)
+            value = value[names[index++]];
+        } else if (typeof context.view == 'object') {
+          value = context.view[name];
+        }
+
+        if (value != null)
+          break;
+
+        context = context.parent;
+      }
+
+      cache[name] = value;
+    }
+
+    if (isFunction(value))
+      value = value.call(this.view);
+
+    return value;
+  };
+
+  /**
+   * A Writer knows how to take a stream of tokens and render them to a
+   * string, given a context. It also maintains a cache of templates to
+   * avoid the need to parse the same template twice.
+   */
+  function Writer() {
+    this.cache = {};
+  }
+
+  /**
+   * Clears all cached templates in this writer.
+   */
+  Writer.prototype.clearCache = function () {
+    this.cache = {};
+  };
+
+  /**
+   * Parses and caches the given `template` and returns the array of tokens
+   * that is generated from the parse.
+   */
+  Writer.prototype.parse = function (template, tags) {
+    var cache = this.cache;
+    var tokens = cache[template];
+
+    if (tokens == null)
+      tokens = cache[template] = parseTemplate(template, tags);
+
+    return tokens;
+  };
+
+  /**
+   * High-level method that is used to render the given `template` with
+   * the given `view`.
+   *
+   * The optional `partials` argument may be an object that contains the
+   * names and templates of partials that are used in the template. It may
+   * also be a function that is used to load partial templates on the fly
+   * that takes a single argument: the name of the partial.
+   */
+  Writer.prototype.render = function (template, view, partials) {
+    var tokens = this.parse(template);
+    var context = (view instanceof Context) ? view : new Context(view);
+    return this.renderTokens(tokens, context, partials, template);
+  };
+
+  /**
+   * Low-level method that renders the given array of `tokens` using
+   * the given `context` and `partials`.
+   *
+   * Note: The `originalTemplate` is only ever used to extract the portion
+   * of the original template that was contained in a higher-order section.
+   * If the template doesn't use higher-order sections, this argument may
+   * be omitted.
+   */
+  Writer.prototype.renderTokens = function (tokens, context, partials, originalTemplate) {
+    var buffer = '';
+
+    var token, symbol, value;
+    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+      value = undefined;
+      token = tokens[i];
+      symbol = token[0];
+
+      if (symbol === '#') value = this._renderSection(token, context, partials, originalTemplate);
+      else if (symbol === '^') value = this._renderInverted(token, context, partials, originalTemplate);
+      else if (symbol === '>') value = this._renderPartial(token, context, partials, originalTemplate);
+      else if (symbol === '&') value = this._unescapedValue(token, context);
+      else if (symbol === 'name') value = this._escapedValue(token, context);
+      else if (symbol === 'text') value = this._rawValue(token);
+
+      if (value !== undefined)
+        buffer += value;
+    }
+
+    return buffer;
+  };
+
+  Writer.prototype._renderSection = function (token, context, partials, originalTemplate) {
+    var self = this;
+    var buffer = '';
+    var value = context.lookup(token[1]);
+
+    // This function is used to render an arbitrary template
+    // in the current context by higher-order sections.
+    function subRender(template) {
+      return self.render(template, context, partials);
+    }
+
+    if (!value) return;
+
+    if (isArray(value)) {
+      for (var j = 0, valueLength = value.length; j < valueLength; ++j) {
+        buffer += this.renderTokens(token[4], context.push(value[j]), partials, originalTemplate);
+      }
+    } else if (typeof value === 'object' || typeof value === 'string') {
+      buffer += this.renderTokens(token[4], context.push(value), partials, originalTemplate);
+    } else if (isFunction(value)) {
+      if (typeof originalTemplate !== 'string')
+        throw new Error('Cannot use higher-order sections without the original template');
+
+      // Extract the portion of the original template that the section contains.
+      value = value.call(context.view, originalTemplate.slice(token[3], token[5]), subRender);
+
+      if (value != null)
+        buffer += value;
+    } else {
+      buffer += this.renderTokens(token[4], context, partials, originalTemplate);
+    }
+    return buffer;
+  };
+
+  Writer.prototype._renderInverted = function(token, context, partials, originalTemplate) {
+    var value = context.lookup(token[1]);
+
+    // Use JavaScript's definition of falsy. Include empty arrays.
+    // See https://github.com/janl/mustache.js/issues/186
+    if (!value || (isArray(value) && value.length === 0))
+      return this.renderTokens(token[4], context, partials, originalTemplate);
+  };
+
+  Writer.prototype._renderPartial = function(token, context, partials) {
+    if (!partials) return;
+
+    var value = isFunction(partials) ? partials(token[1]) : partials[token[1]];
+    if (value != null)
+      return this.renderTokens(this.parse(value), context, partials, value);
+  };
+
+  Writer.prototype._unescapedValue = function(token, context) {
+    var value = context.lookup(token[1]);
+    if (value != null)
+      return value;
+  };
+
+  Writer.prototype._escapedValue = function(token, context) {
+    var value = context.lookup(token[1]);
+    if (value != null)
+      return mustache.escape(value);
+  };
+
+  Writer.prototype._rawValue = function(token) {
+    return token[1];
+  };
+
+  mustache.name = "mustache.js";
+  mustache.version = "1.1.0";
+  mustache.tags = [ "{{", "}}" ];
+
+  // All high-level mustache.* functions use this writer.
+  var defaultWriter = new Writer();
+
+  /**
+   * Clears all cached templates in the default writer.
+   */
+  mustache.clearCache = function () {
+    return defaultWriter.clearCache();
+  };
+
+  /**
+   * Parses and caches the given template in the default writer and returns the
+   * array of tokens it contains. Doing this ahead of time avoids the need to
+   * parse templates on the fly as they are rendered.
+   */
+  mustache.parse = function (template, tags) {
+    return defaultWriter.parse(template, tags);
+  };
+
+  /**
+   * Renders the `template` with the given `view` and `partials` using the
+   * default writer.
+   */
+  mustache.render = function (template, view, partials) {
+    return defaultWriter.render(template, view, partials);
+  };
+
+  // This is here for backwards compatibility with 0.4.x.
+  mustache.to_html = function (template, view, partials, send) {
+    var result = mustache.render(template, view, partials);
+
+    if (isFunction(send)) {
+      send(result);
+    } else {
+      return result;
+    }
+  };
+
+  // Export the escaping function so that the user may override it.
+  // See https://github.com/janl/mustache.js/issues/244
+  mustache.escape = escapeHtml;
+
+  // Export these mainly for testing, but also for advanced usage.
+  mustache.Scanner = Scanner;
+  mustache.Context = Context;
+  mustache.Writer = Writer;
+
+}));
+
+},{}],2:[function(require,module,exports){
 
 /*
  * @class Stackla.Base
  */
+var Base;
 
-(function() {
-  var Base;
-
-  Base = (function() {
-    function Base(options) {
-      var attrs, debug;
-      if (options == null) {
-        options = {};
-      }
-      debug = this.getParams('debug');
-      attrs = attrs || {};
-      if (debug) {
-        this.debug = debug === 'true' || debug === '1';
-      } else if (attrs.debug) {
-        this.debug = attrs.debug === true;
-      } else {
-        this.debug = false;
-      }
-      this._listeners = [];
+Base = (function() {
+  function Base(options) {
+    var attrs, debug;
+    if (options == null) {
+      options = {};
     }
-
-    Base.prototype.toString = function() {
-      return 'Base';
-    };
-
-    Base.prototype.log = function(msg, type) {
-      if (!this.debug) {
-        return;
-      }
-      type = type || 'info';
-      if (window.console && window.console[type]) {
-        window.console[type]("[" + (this.toString()) + "] " + msg);
-      }
-    };
-
-    Base.prototype.on = function(type, callback) {
-      if (!type || !callback) {
-        throw new Error('Both event type and callback are required parameters');
-      }
-      this.log('on() - event \'' + type + '\' is subscribed');
-      if (!this._listeners[type]) {
-        this._listeners[type] = [];
-      }
-      callback.instance = this;
-      this._listeners[type].push(callback);
-      return callback;
-    };
-
-    Base.prototype.emit = function(type, data) {
-      var i;
-      if (data == null) {
-        data = [];
-      }
-      this.log("emit() - event '" + type + "' is triggered");
-      data.unshift({
-        type: type,
-        target: this
-      });
-      if (!type) {
-        throw new Error('Lacks of type parameter');
-      }
-      if (this._listeners[type] && this._listeners[type].length) {
-        for (i in this._listeners[type]) {
-          this._listeners[type][i].apply(this, data);
-        }
-      }
-      return this;
-    };
-
-    Base.prototype.getParams = function(key) {
-      var hash, hashes, href, i, params, pos;
-      href = this.getUrl();
-      params = {};
-      pos = href.indexOf('?');
-      this.log('getParams() is executed');
-      if (href.indexOf('#') !== -1) {
-        hashes = href.slice(pos + 1, href.indexOf('#')).split('&');
-      } else {
-        hashes = href.slice(pos + 1).split('&');
-      }
-      for (i in hashes) {
-        hash = hashes[i].split('=');
-        params[hash[0]] = hash[1];
-      }
-      if (key) {
-        return params[key];
-      } else {
-        return params;
-      }
-    };
-
-    Base.prototype.getUrl = function() {
-      return window.location.href;
-    };
-
-    return Base;
-
-  })();
-
-  if (!window.Stackla) {
-    window.Stackla = {};
+    debug = this.getParams('debug');
+    attrs = attrs || {};
+    if (debug) {
+      this.debug = debug === 'true' || debug === '1';
+    } else if (attrs.debug) {
+      this.debug = attrs.debug === true;
+    } else {
+      this.debug = false;
+    }
+    this._listeners = [];
   }
 
-  window.Stackla.Base = Base;
+  Base.prototype.toString = function() {
+    return 'Base';
+  };
 
-}).call(this);
-
-//# sourceMappingURL=data:application/json;base64,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Q0FERjtBQUFBLE9BUkE7QUFXQSxNQUFBLElBQUcsR0FBSDtlQUFZLE1BQU8sQ0FBQSxHQUFBLEVBQW5CO09BQUEsTUFBQTtlQUE2QixPQUE3QjtPQVpTO0lBQUEsQ0F4Q1gsQ0FBQTs7QUFBQSxtQkFzREEsTUFBQSxHQUFRLFNBQUEsR0FBQTthQUFHLE1BQU0sQ0FBQyxRQUFRLENBQUMsS0FBbkI7SUFBQSxDQXREUixDQUFBOztnQkFBQTs7TUFMRixDQUFBOztBQThEQSxFQUFBLElBQUEsQ0FBQSxNQUFpQyxDQUFDLE9BQWxDO0FBQUEsSUFBQSxNQUFNLENBQUMsT0FBUCxHQUFpQixFQUFqQixDQUFBO0dBOURBOztBQUFBLEVBK0RBLE1BQU0sQ0FBQyxPQUFPLENBQUMsSUFBZixHQUFzQixJQS9EdEIsQ0FBQTtBQUFBIiwiZmlsZSI6ImJhc2UuanMiLCJzb3VyY2VSb290IjoiL3NvdXJjZS8iLCJzb3VyY2VzQ29udGVudCI6WyIjIyNcbiMgQGNsYXNzIFN0YWNrbGEuQmFzZVxuIyMjXG5jbGFzcyBCYXNlXG5cbiAgY29uc3RydWN0b3I6IChvcHRpb25zID0ge30pIC0+XG4gICAgZGVidWcgPSBAZ2V0UGFyYW1zKCdkZWJ1ZycpXG4gICAgYXR0cnMgPSBhdHRycyBvciB7fVxuICAgIGlmIGRlYnVnXG4gICAgICBAZGVidWcgPSAoZGVidWcgaXMgJ3RydWUnIG9yIGRlYnVnIGlzICcxJylcbiAgICBlbHNlIGlmIGF0dHJzLmRlYnVnXG4gICAgICBAZGVidWcgPSAoYXR0cnMuZGVidWcgaXMgb24pXG4gICAgZWxzZVxuICAgICAgQGRlYnVnID0gZmFsc2VcbiAgICBAX2xpc3RlbmVycyA9IFtdXG5cbiAgdG9TdHJpbmc6IC0+ICdCYXNlJ1xuXG4gIGxvZzogKG1zZywgdHlwZSkgLT5cbiAgICByZXR1cm4gdW5sZXNzIEBkZWJ1Z1xuICAgIHR5cGUgPSB0eXBlIG9yICdpbmZvJ1xuICAgIGlmIHdpbmRvdy5jb25zb2xlIGFuZCB3aW5kb3cuY29uc29sZVt0eXBlXVxuICAgICAgd2luZG93LmNvbnNvbGVbdHlwZV0gXCJbI3tAdG9TdHJpbmcoKX1dICN7bXNnfVwiXG4gICAgcmV0dXJuXG5cbiAgb246ICh0eXBlLCBjYWxsYmFjaykgLT5cbiAgICBpZiAhdHlwZSBvciAhY2FsbGJhY2tcbiAgICAgIHRocm93IG5ldyBFcnJvcignQm90aCBldmVudCB0eXBlIGFuZCBjYWxsYmFjayBhcmUgcmVxdWlyZWQgcGFyYW1ldGVycycpXG4gICAgQGxvZyAnb24oKSAtIGV2ZW50IFxcJycgKyB0eXBlICsgJ1xcJyBpcyBzdWJzY3JpYmVkJ1xuICAgIEBfbGlzdGVuZXJzW3R5cGVdID0gW10gdW5sZXNzIEBfbGlzdGVuZXJzW3R5cGVdXG4gICAgY2FsbGJhY2suaW5zdGFuY2UgPSBAXG4gICAgQF9saXN0ZW5lcnNbdHlwZV0ucHVzaChjYWxsYmFjaylcbiAgICBjYWxsYmFja1xuXG4gIGVtaXQ6ICh0eXBlLCBkYXRhID0gW10pIC0+XG4gICAgQGxvZyBcImVtaXQoKSAtIGV2ZW50ICcje3R5cGV9JyBpcyB0cmlnZ2VyZWRcIlxuICAgIGRhdGEudW5zaGlmdFxuICAgICAgdHlwZTogdHlwZVxuICAgICAgdGFyZ2V0OiBAXG4gICAgdGhyb3cgbmV3IEVycm9yKCdMYWNrcyBvZiB0eXBlIHBhcmFtZXRlcicpIHVubGVzcyB0eXBlXG4gICAgaWYgQF9saXN0ZW5lcnNbdHlwZV0gYW5kIEBfbGlzdGVuZXJzW3R5cGVdLmxlbmd0aFxuICAgICAgZm9yIGkgb2YgQF9saXN0ZW5lcnNbdHlwZV1cbiAgICAgICAgQF9saXN0ZW5lcnNbdHlwZV1baV0uYXBwbHkgQCwgZGF0YVxuICAgIEBcblxuICBnZXRQYXJhbXM6IChrZXkpIC0+XG4gICAgaHJlZiA9IEBnZXRVcmwoKVxuICAgIHBhcmFtcyA9IHt9XG4gICAgcG9zID0gaHJlZi5pbmRleE9mKCc/JylcbiAgICBAbG9nICdnZXRQYXJhbXMoKSBpcyBleGVjdXRlZCdcbiAgICBpZiBocmVmLmluZGV4T2YoJyMnKSAhPSAtMVxuICAgICAgaGFzaGVzID0gaHJlZi5zbGljZShwb3MgKyAxLCBocmVmLmluZGV4T2YoJyMnKSkuc3BsaXQoJyYnKVxuICAgIGVsc2VcbiAgICAgIGhhc2hlcyA9IGhyZWYuc2xpY2UocG9zICsgMSkuc3BsaXQoJyYnKVxuICAgIGZvciBpIG9mIGhhc2hlc1xuICAgICAgaGFzaCA9IGhhc2hlc1tpXS5zcGxpdCgnPScpXG4gICAgICBwYXJhbXNbaGFzaFswXV0gPSBoYXNoWzFdXG4gICAgaWYga2V5IHRoZW4gcGFyYW1zW2tleV0gZWxzZSBwYXJhbXNcblxuICBnZXRVcmw6IC0+IHdpbmRvdy5sb2NhdGlvbi5ocmVmXG5cbiMgUHJvbW90ZSB0byBnbG9iYWxcbndpbmRvdy5TdGFja2xhID0ge30gdW5sZXNzIHdpbmRvdy5TdGFja2xhXG53aW5kb3cuU3RhY2tsYS5CYXNlID0gQmFzZVxuIl19
-(function() {
-  var ImageSize,
-    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    hasProp = {}.hasOwnProperty;
-
-  ImageSize = (function(superClass) {
-    extend(ImageSize, superClass);
-
-    function ImageSize(el, callback) {
-      ImageSize.__super__.constructor.call(this);
-      this.init(el);
-      this.bind();
-      this.render(callback);
-      return this;
+  Base.prototype.log = function(msg, type) {
+    if (!this.debug) {
+      return;
     }
+    type = type || 'info';
+    if (window.console && window.console[type]) {
+      window.console[type]("[" + (this.toString()) + "] " + msg);
+    }
+  };
 
-    ImageSize.prototype.toString = function() {
-      return 'ImageSize';
-    };
+  Base.prototype.on = function(type, callback) {
+    if (!type || !callback) {
+      throw new Error('Both event type and callback are required parameters');
+    }
+    this.log('on() - event \'' + type + '\' is subscribed');
+    if (!this._listeners[type]) {
+      this._listeners[type] = [];
+    }
+    callback.instance = this;
+    this._listeners[type].push(callback);
+    return callback;
+  };
 
-    ImageSize.prototype.init = function(el) {
-      this.el = $(el)[0];
-      this.complete = this.el.complete;
-      this.data = {};
-      this._timer = null;
-      this.data.width = this.el.width;
-      return this.data.height = this.el.height;
-    };
-
-    ImageSize.prototype.bind = function() {
-      this.log('bind() is executed');
-      return $(window).resize((function(_this) {
-        return function(e) {
-          var isEqual;
-          isEqual = _this.el.width === _this.data.width && _this.el.height === _this.data.height;
-          if (isEqual) {
-            return;
-          }
-          $.extend(_this.data, {
-            width: _this.el.width,
-            height: _this.el.height,
-            widthRatio: _this.el.width / _this.data.naturalWidth,
-            heightRatio: _this.el.height / _this.data.naturalHeight
-          });
-          _this.log('handleResize() is executed');
-          return _this.emit('change', [_this.data]);
-        };
-      })(this));
-    };
-
-    ImageSize.prototype.render = function(callback) {
-      var img;
-      this.log('render() is executed');
-      if (this.complete) {
-        img = new Image();
-        img.src = this.el.src;
-        this.log("Image '" + this.el.src + "' is loaded");
-        this.data.naturalWidth = img.width;
-        this.data.naturalHeight = img.height;
-        return callback(true, this.data);
-      } else {
-        this.log("Image '" + this.el.src + "' is NOT ready");
-        img = new Image();
-        img.src = this.el.src;
-        img.onload = (function(_this) {
-          return function(e) {
-            _this.log("Image '" + img.src + "' is loaded");
-            _this.data.naturalWidth = img.width;
-            _this.data.naturalHeight = img.height;
-            return callback(true, _this.data);
-          };
-        })(this);
-        return img.onerror = (function(_this) {
-          return function(e) {
-            _this.log("Image '" + img.src + "' is failed to load");
-            return callback(false, _this.data);
-          };
-        })(this);
+  Base.prototype.emit = function(type, data) {
+    var i;
+    if (data == null) {
+      data = [];
+    }
+    this.log("emit() - event '" + type + "' is triggered");
+    data.unshift({
+      type: type,
+      target: this
+    });
+    if (!type) {
+      throw new Error('Lacks of type parameter');
+    }
+    if (this._listeners[type] && this._listeners[type].length) {
+      for (i in this._listeners[type]) {
+        this._listeners[type][i].apply(this, data);
       }
-    };
+    }
+    return this;
+  };
 
-    return ImageSize;
+  Base.prototype.getParams = function(key) {
+    var hash, hashes, href, i, params, pos;
+    href = this.getUrl();
+    params = {};
+    pos = href.indexOf('?');
+    this.log('getParams() is executed');
+    if (href.indexOf('#') !== -1) {
+      hashes = href.slice(pos + 1, href.indexOf('#')).split('&');
+    } else {
+      hashes = href.slice(pos + 1).split('&');
+    }
+    for (i in hashes) {
+      hash = hashes[i].split('=');
+      params[hash[0]] = hash[1];
+    }
+    if (key) {
+      return params[key];
+    } else {
+      return params;
+    }
+  };
 
-  })(Stackla.Base);
+  Base.prototype.getUrl = function() {
+    return window.location.href;
+  };
 
-  if (!window.Stackla) {
-    window.Stackla = {};
+  return Base;
+
+})();
+
+if (!window.Stackla) {
+  window.Stackla = {};
+}
+
+window.Stackla.Base = Base;
+
+module.exports = Base;
+
+
+
+},{}],3:[function(require,module,exports){
+var Base, ImageSize,
+  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+Base = require('./base.coffee');
+
+ImageSize = (function(superClass) {
+  extend(ImageSize, superClass);
+
+  function ImageSize(el, callback) {
+    ImageSize.__super__.constructor.call(this);
+    this.init(el);
+    this.bind();
+    this.render(callback);
+    return this;
   }
 
-  Stackla.getImageSize = function(el, callback) {
-    return new ImageSize(el, callback);
+  ImageSize.prototype.toString = function() {
+    return 'ImageSize';
   };
 
-}).call(this);
-
-//# sourceMappingURL=data:application/json;base64,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QSxHQUFHLENBQUMsT0FBSixHQUFjLENBQUEsU0FBQSxLQUFBLEdBQUE7aUJBQUEsU0FBQyxDQUFELEdBQUE7QUFDWixZQUFBLEtBQUMsQ0FBQSxHQUFELENBQUssU0FBQSxHQUFVLEdBQUcsQ0FBQyxHQUFkLEdBQWtCLHFCQUF2QixDQUFBLENBQUE7bUJBQ0EsUUFBQSxDQUFTLEtBQVQsRUFBZ0IsS0FBQyxDQUFBLElBQWpCLEVBRlk7VUFBQSxFQUFBO1FBQUEsQ0FBQSxDQUFBLENBQUEsSUFBQSxFQWpCaEI7T0FITTtJQUFBLENBaENSLENBQUE7O3FCQUFBOztLQUZzQixPQUFPLENBQUMsS0FBaEMsQ0FBQTs7QUEyREEsRUFBQSxJQUFBLENBQUEsTUFBaUMsQ0FBQyxPQUFsQztBQUFBLElBQUEsTUFBTSxDQUFDLE9BQVAsR0FBaUIsRUFBakIsQ0FBQTtHQTNEQTs7QUFBQSxFQTZEQSxPQUFPLENBQUMsWUFBUixHQUF1QixTQUFDLEVBQUQsRUFBSyxRQUFMLEdBQUE7V0FDakIsSUFBQSxTQUFBLENBQVUsRUFBVixFQUFjLFFBQWQsRUFEaUI7RUFBQSxDQTdEdkIsQ0FBQTtBQUFBIiwiZmlsZSI6ImltYWdlLmpzIiwic291cmNlUm9vdCI6Ii9zb3VyY2UvIiwic291cmNlc0NvbnRlbnQiOlsiY2xhc3MgSW1hZ2VTaXplIGV4dGVuZHMgU3RhY2tsYS5CYXNlXG5cbiAgY29uc3RydWN0b3I6IChlbCwgY2FsbGJhY2spIC0+XG4gICAgc3VwZXIoKVxuICAgIEBpbml0KGVsKVxuICAgIEBiaW5kKClcbiAgICBAcmVuZGVyKGNhbGxiYWNrKVxuICAgIHJldHVybiBAXG5cbiAgdG9TdHJpbmc6ICgpIC0+ICdJbWFnZVNpemUnXG5cbiAgaW5pdDogKGVsKSAtPlxuICAgIEBlbCA9ICQoZWwpWzBdXG4gICAgQGNvbXBsZXRlID0gQGVsLmNvbXBsZXRlXG4gICAgQGRhdGEgPSB7fVxuICAgIEBfdGltZXIgPSBudWxsXG4gICAgQGRhdGEud2lkdGggPSBAZWwud2lkdGhcbiAgICBAZGF0YS5oZWlnaHQgPSBAZWwuaGVpZ2h0XG5cbiAgYmluZDogLT5cbiAgICBAbG9nICdiaW5kKCkgaXMgZXhlY3V0ZWQnXG4gICAgIyBLZWVwIGFuIGV5ZSBvbiByZXNpemUgZXZlbnRcbiAgICAkKHdpbmRvdykucmVzaXplIChlKSA9PlxuICAgICAgaXNFcXVhbCA9IEBlbC53aWR0aCBpcyBAZGF0YS53aWR0aCBhbmQgQGVsLmhlaWdodCBpcyBAZGF0YS5oZWlnaHRcbiAgICAgIHJldHVybiBpZiBpc0VxdWFsXG4gICAgICAkLmV4dGVuZCBAZGF0YSwge1xuICAgICAgICB3aWR0aDogQGVsLndpZHRoXG4gICAgICAgIGhlaWdodDogQGVsLmhlaWdodFxuICAgICAgICB3aWR0aFJhdGlvOiBAZWwud2lkdGggLyBAZGF0YS5uYXR1cmFsV2lkdGhcbiAgICAgICAgaGVpZ2h0UmF0aW86IEBlbC5oZWlnaHQgLyBAZGF0YS5uYXR1cmFsSGVpZ2h0XG4gICAgICB9XG4gICAgICBAbG9nICdoYW5kbGVSZXNpemUoKSBpcyBleGVjdXRlZCdcbiAgICAgIEAuZW1pdCgnY2hhbmdlJywgW0BkYXRhXSlcblxuICByZW5kZXI6IChjYWxsYmFjaykgLT5cbiAgICBAbG9nICdyZW5kZXIoKSBpcyBleGVjdXRlZCdcbiAgICAjIEltYWdlIExvYWRlZFxuICAgIGlmIEBjb21wbGV0ZVxuICAgICAgaW1nID0gbmV3IEltYWdlKClcbiAgICAgIGltZy5zcmMgPSBAZWwuc3JjXG4gICAgICBAbG9nIFwiSW1hZ2UgJyN7QGVsLnNyY30nIGlzIGxvYWRlZFwiXG4gICAgICBAZGF0YS5uYXR1cmFsV2lkdGggPSBpbWcud2lkdGhcbiAgICAgIEBkYXRhLm5hdHVyYWxIZWlnaHQgPSBpbWcuaGVpZ2h0XG4gICAgICBjYWxsYmFjayh0cnVlLCBAZGF0YSlcbiAgICAjIEltYWdlIExvYWRpbmdcbiAgICBlbHNlXG4gICAgICBAbG9nIFwiSW1hZ2UgJyN7QGVsLnNyY30nIGlzIE5PVCByZWFkeVwiXG4gICAgICBpbWcgPSBuZXcgSW1hZ2UoKVxuICAgICAgaW1nLnNyYyA9IEBlbC5zcmNcbiAgICAgIGltZy5vbmxvYWQgPSAoZSkgPT5cbiAgICAgICAgQGxvZyBcIkltYWdlICcje2ltZy5zcmN9JyBpcyBsb2FkZWRcIlxuICAgICAgICBAZGF0YS5uYXR1cmFsV2lkdGggPSBpbWcud2lkdGhcbiAgICAgICAgQGRhdGEubmF0dXJhbEhlaWdodCA9IGltZy5oZWlnaHRcbiAgICAgICAgY2FsbGJhY2sodHJ1ZSwgQGRhdGEpXG4gICAgICBpbWcub25lcnJvciA9IChlKSA9PlxuICAgICAgICBAbG9nIFwiSW1hZ2UgJyN7aW1nLnNyY30nIGlzIGZhaWxlZCB0byBsb2FkXCJcbiAgICAgICAgY2FsbGJhY2soZmFsc2UsIEBkYXRhKVxuXG5cbndpbmRvdy5TdGFja2xhID0ge30gdW5sZXNzIHdpbmRvdy5TdGFja2xhXG5cblN0YWNrbGEuZ2V0SW1hZ2VTaXplID0gKGVsLCBjYWxsYmFjaykgLT5cbiAgbmV3IEltYWdlU2l6ZShlbCwgY2FsbGJhY2spXG4iXX0=
-(function() {
-  var ATTRS, Tagla, proto,
-    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    hasProp = {}.hasOwnProperty;
-
-  ATTRS = {
-    NAME: 'Tagla',
-    PREFIX: 'tagla-',
-    DRAG_ATTR: {
-      containment: '.tagla',
-      handle: '.tagla-icon'
-    },
-    SELECT_ATTR: {
-      allow_single_deselect: true,
-      placeholder_text_single: 'Select an option',
-      width: '310px'
-    },
-    FORM_TEMPLATE: ['<div class="tagla-form-wrapper">', '    <form class="tagla-form">', '        <div class="tagla-form-title">', '            Select Your Product', '            <a href="javascript:void(0);" class="tagla-form-close">×</a>', '        </div>', '        <input type="hidden" name="x">', '        <input type="hidden" name="y">', '        <select data-placeholder="Search" type="text" name="tag" class="tagla-select chosen-select" placeholder="Search">', '            <option></option>', '            <option value="1">Cockie</option>', '            <option value="2">Kiwi</option>', '            <option value="3">Buddy</option>', '        </select>', '    </form>', '</div>'].join('\n'),
-    TAG_TEMPLATE: ['<div class="tagla-tag">', '    <i class="tagla-icon fs fs-tag2"></i>', '    <div class="tagla-dialog">', '    {{#product}}', '        {{#image_small_url}}', '        <div class="tagla-dialog-image">', '          <img src="{{image_small_url}}">', '        </div>', '        {{/image_small_url}}', '        <div class="tagla-dialog-text">', '          <div class="tagla-dialog-edit">', '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-edit-link">', '              <i class="fs fs-pencil"></i> Edit', '            </a>', '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-delete-link">', '              <i class="fs fs-cross3"></i> Delete', '            </a>', '          </div>', '          <h2 class="tagla-dialog-title">{{tag}}</h2>', '          {{#price}}', '          <div class="tagla-dialog-price">{{price}}</div>', '          {{/price}}', '          {{#description}}', '          <p class="tagla-dialog-description">{{description}}</p>', '          {{/description}}', '          {{#custom_url}}', '          <a href="{{custom_url}}" class="tagla-dialog-button st-btn st-btn-success st-btn-solid" target=""{{target}}">', '            <i class="fs fs-cart"></i>', '            Buy Now', '          </a>', '          {{/custom_url}}', '        </div>', '    {{/product}}', '    </div>', '    {{{form_html}}}', '</div>'].join('\n'),
-    NEW_TAG_TEMPLATE: ['<div class="tagla-tag">', '    <i class="tagla-icon fs fs-tag2"></i>', '</div>'].join('\n')
+  ImageSize.prototype.init = function(el) {
+    this.el = $(el)[0];
+    this.complete = this.el.complete;
+    this.data = {};
+    this._timer = null;
+    this.data.width = this.el.width;
+    return this.data.height = this.el.height;
   };
 
-  Tagla = (function(superClass) {
-    extend(Tagla, superClass);
-
-    function Tagla($wrapper, options) {
-      if (options == null) {
-        options = {};
-      }
-      Tagla.__super__.constructor.call(this);
-      this.wrapper = $($wrapper);
-      this.init(options);
-      this.bind();
-    }
-
-    return Tagla;
-
-  })(Stackla.Base);
-
-  $.extend(Tagla, ATTRS);
-
-  proto = {
-    toString: function() {
-      return 'Tagla';
-    },
-    _applyTools: function($tag) {
-      var $form, $select, drag, tag;
-      this.log('_applyTools() is executed');
-      drag = new Draggabilly($tag[0], Tagla.DRAG_ATTR);
-      drag.on('dragEnd', $.proxy(this.handleTagMove, this));
-      $tag.data('draggabilly', drag);
-      tag = $tag.data('tag-data');
-      $form = $tag.find('.tagla-form');
-      $form.find('[name=x]').val(tag.x);
-      $form.find('[name=y]').val(tag.y);
-      $form.find("[name=tag] option[value=" + tag.value + "]").attr('selected', 'selected');
-      $select = $tag.find('.tagla-select');
-      $select.chosen2(Tagla.SELECT_ATTR);
-      $select.on('change', $.proxy(this.handleTagChange, this));
-      return $select.on('chosen:hiding_dropdown', function(e, params) {
-        return $select.trigger('chosen:open');
-      });
-    },
-    _disableDrag: function($except) {
-      if (this.editor === false) {
-        return;
-      }
-      this.log('_disableDrag() is executed');
-      $except = $($except);
-      return $('.tagla-tag').each(function() {
-        if ($except[0] === this) {
+  ImageSize.prototype.bind = function() {
+    this.log('bind() is executed');
+    return $(window).resize((function(_this) {
+      return function(e) {
+        var isEqual;
+        isEqual = _this.el.width === _this.data.width && _this.el.height === _this.data.height;
+        if (isEqual) {
           return;
         }
-        return $(this).data('draggabilly').disable();
-      });
-    },
-    _enableDrag: function($except) {
-      if (this.editor === false) {
-        return;
-      }
-      this.log('_enableDrag() is executed');
-      $except = $($except);
-      return $('.tagla-tag').each(function() {
-        if ($except[0] === this) {
-          return;
-        }
-        return $(this).data('draggabilly').enable();
-      });
-    },
-    _removeTools: function($tag) {
-      var $select;
-      $tag.data('draggabilly').destroy();
-      $select = $tag.find('.tagla-select');
-      $select.show().removeClass('chzn-done');
-      return $select.next().remove();
-    },
-    _getPosition: function($tag) {
-      var pos, x, y;
-      this.log('_getPosition() is executed');
-      pos = $tag.position();
-      x = (pos.left + ($tag.width() / 2)) / this.currentWidth * this.naturalWidth;
-      y = (pos.top + ($tag.height() / 2)) / this.currentHeight * this.naturalHeight;
-      if (this.unit === 'percent') {
-        x = x / this.naturalWidth * 100;
-        y = y / this.naturalHeight * 100;
-      }
-      return [x, y];
-    },
-    _updateImageSize: function(data) {
-      this.log('_updateImageSize() is executed');
-      this.naturalWidth = data.naturalWidth;
-      this.naturalHeight = data.naturalHeight;
-      this.currentWidth = data.width;
-      this.currentHeight = data.height;
-      this.widthRatio = data.widthRatio;
-      return this.heightRatio = data.heightRatio;
-    },
-    handleTagClick: function(e) {
-      var $tag;
-      e.preventDefault();
-      e.stopPropagation();
-      if (!$(e.target).hasClass('tagla-icon')) {
-        return;
-      }
-      this.log('handleTagClick() is executed');
-      $tag = $(e.currentTarget);
-      this.shrink($tag);
-      $tag.addClass('tagla-tag-active');
-      return $tag.data('draggabilly').enable();
-    },
-    handleTagChange: function(e, params) {
-      var $select, $tag, data, isNew, serialize;
-      this.log('handleTagChange() is executed');
-      $select = $(e.target);
-      $tag = $select.parents('.tagla-tag');
-      isNew = $tag.hasClass('tagla-tag-new');
-      $tag.removeClass('tagla-tag-choose tagla-tag-active tagla-tag-new');
-      data = $.extend({}, $tag.data('tag-data'));
-      data.label = $select.find('option:selected').text();
-      data.value = $select.val() || data.label;
-      serialize = $tag.find('.tagla-form').serialize();
-      if (isNew) {
-        return this.emit('add', [data, serialize, $tag]);
-      } else {
-        return this.emit('change', [data, serialize, $tag]);
-      }
-    },
-    handleTagDelete: function(e) {
-      var $tag, data;
-      this.log('handleTagDelete() is executed');
-      e.preventDefault();
-      $tag = $(e.currentTarget).parents('.tagla-tag');
-      data = $.extend({}, $tag.data('tag-data'));
-      return $tag.fadeOut((function(_this) {
-        return function() {
-          _this._removeTools($tag);
-          $tag.remove();
-          return _this.emit('delete', [data]);
-        };
-      })(this));
-    },
-    handleTagEdit: function(e) {
-      var $tag, data;
-      this.log('handleTagEdit() is executed');
-      e.preventDefault();
-      e.stopPropagation();
-      $tag = $(e.currentTarget).parents('.tagla-tag');
-      $tag.addClass('tagla-tag-choose');
-      this.wrapper.addClass('tagla-editing-selecting');
-      this._disableDrag($tag);
-      $tag.find('.tagla-select').trigger('chosen:open');
-      data = $.extend({}, $tag.data('tag-data'));
-      return this.emit('edit', [data, $tag]);
-    },
-    handleTagMove: function(instance, event, pointer) {
-      var $form, $tag, data, isNew, pos, serialize;
-      this.log('handleTagMove() is executed');
-      $tag = $(instance.element);
-      data = $tag.data('tag-data');
-      pos = this._getPosition($tag);
-      data.x = pos[0];
-      data.y = pos[1];
-      $form = $tag.find('.tagla-form');
-      $form.find('[name=x]').val(data.x);
-      $form.find('[name=y]').val(data.y);
-      serialize = $tag.find('.tagla-form').serialize();
-      this.lastDragTime = new Date();
-      data = $.extend({}, data);
-      isNew = data.id ? false : true;
-      return this.emit('move', [data, serialize, $tag, isNew]);
-    },
-    handleTagMouseEnter: function(e) {
-      var $tag, timer;
-      this.log('handleTagMouseEnter');
-      $tag = $(e.currentTarget);
-      timer = $tag.data('timer');
-      if (timer) {
-        clearTimeout(timer);
-      }
-      $tag.removeData('timer');
-      $tag.addClass('tagla-tag-hover');
-      return this.emit('hover', [$tag]);
-    },
-    handleTagMouseLeave: function(e) {
-      var $tag, timer;
-      this.log('handleTagMouseLeave');
-      $tag = $(e.currentTarget);
-      timer = $tag.data('timer');
-      if (timer) {
-        clearTimeout(timer);
-      }
-      $tag.removeData('timer');
-      timer = setTimeout(function() {
-        return $tag.removeClass('tagla-tag-hover');
-      }, 300);
-      return $tag.data('timer', timer);
-    },
-    handleWrapperClick: function(e) {
-      this.log('handleWrapperClick() is executed');
-      if (new Date() - this.lastDragTime > 10) {
-        return this.shrink();
-      }
-    },
-    handleImageResize: function(e, data) {
-      var prevHeight, prevWidth;
-      this.log('handleImageResize() is executed');
-      prevWidth = this.currentWidth;
-      prevHeight = this.currentHeight;
-      $('.tagla-tag').each(function() {
-        var $tag, pos, x, y;
-        $tag = $(this);
-        pos = $tag.position();
-        x = (pos.left / prevWidth) * data.width;
-        y = (pos.top / prevHeight) * data.height;
-        return $tag.css({
-          left: x + "px",
-          top: y + "px"
+        $.extend(_this.data, {
+          width: _this.el.width,
+          height: _this.el.height,
+          widthRatio: _this.el.width / _this.data.naturalWidth,
+          heightRatio: _this.el.height / _this.data.naturalHeight
         });
-      });
-      return this._updateImageSize(data);
-    },
-    addTag: function(tag) {
-      var $tag, isNew, offsetX, offsetY, x, y;
-      if (tag == null) {
-        tag = {};
-      }
-      this.log('addTag() is executed');
-      tag = $.extend({}, tag);
-      tag.form_html = this.formHtml;
-      $tag = $(Mustache.render(this.tagTemplate, tag));
-      isNew = !tag.x && !tag.y;
-      if (isNew) {
-        $('.tagla-tag').each(function() {
-          if ($(this).hasClass('tagla-tag-new') && !$(this).find('[name=tag]').val()) {
-            return $(this).fadeOut((function(_this) {
-              return function() {
-                return _this._removeTools($tag);
-              };
-            })(this));
-          }
-        });
-      }
-      this.wrapper.append($tag);
-      if (isNew) {
-        tag.x = 50;
-        tag.y = 50;
-        $tag.addClass('tagla-tag-new tagla-tag-active tagla-tag-choose');
-      }
-      if (this.unit === 'percent') {
-        x = this.currentWidth * (tag.x / 100);
-        y = this.currentHeight * (tag.y / 100);
-      } else {
-        x = tag.x * this.widthRatio;
-        y = tag.y * this.heightRatio;
-      }
-      offsetX = $tag.outerWidth() / 2;
-      offsetY = $tag.outerHeight() / 2;
-      $tag.css({
-        'left': (x - offsetX) + "px",
-        'top': (y - offsetY) + "px"
-      });
-      $tag.data('tag-data', tag);
-      if (this.editor) {
-        this._applyTools($tag);
-        if (isNew) {
-          $tag.data('draggabilly').enable();
-          $tag.addClass('tagla-tag-choose');
-          return setTimeout((function(_this) {
-            return function() {
-              _this.wrapper.addClass('tagla-editing-selecting');
-              $tag.find('.tagla-select').trigger('chosen:open');
-              _this._disableDrag($tag);
-              return _this.emit('new', [$tag]);
-            };
-          })(this), 100);
-        }
-      }
-    },
-    deleteTag: function($tag) {
-      return this.log('deleteTag() is executed');
-    },
-    edit: function() {
-      if (this.editor === true) {
-        return;
-      }
-      this.log('edit() is executed');
-      this.wrapper.addClass('tagla-editing');
-      $('.tagla-tag').each(function() {
-        return this._applyTools($(this));
-      });
-      return this.editor = true;
-    },
-    getTags: function() {
-      var tags;
-      this.log('getTags() is executed');
-      tags = [];
-      $('.tagla-tag').each(function() {
-        var data;
-        data = $.extend({}, $(this).data('tag-data'));
-        return tags.push($(this).data('tag-data'));
-      });
-      return tags;
-    },
-    shrink: function($except) {
-      if ($except == null) {
-        $except = null;
-      }
-      if (this.editor === false) {
-        return;
-      }
-      this.log('shrink() is executed');
-      $except = $($except);
-      $('.tagla-tag').each((function(_this) {
-        return function(i, el) {
-          var $tag;
-          if ($except[0] === el) {
-            return;
-          }
-          $tag = $(el);
-          if ($tag.hasClass('tagla-tag-new') && !$tag.find('[name=tag]').val()) {
-            $tag.fadeOut(function() {
-              $tag.remove();
-              return _this._removeTools($tag);
-            });
-          }
-          return $tag.removeClass('tagla-tag-active tagla-tag-choose');
-        };
-      })(this));
-      this.wrapper.removeClass('tagla-editing-selecting');
-      return this._enableDrag();
-    },
-    updateDialog: function($tag, data) {
-      var html;
-      data = $.extend({}, $tag.data('tag-data'), data);
-      data.form_html = this.formHtml;
-      html = $(Mustache.render(this.tagTemplate, data)).find('.tagla-dialog').html();
-      $tag.find('.tagla-dialog').html(html);
-      return $tag.data('tag-data', data);
-    },
-    unedit: function() {
-      if (this.edit === false) {
-        return;
-      }
-      this.log('unedit() is executed');
-      $('.tagla-tag').each((function(_this) {
-        return function(i, el) {
-          return _this._removeTools($(el));
-        };
-      })(this));
-      this.wrapper.removeClass('tagla-editing');
-      return this.editor = false;
-    },
-    init: function(options) {
-      var ref;
-      this.data = options.data || [];
-      this.editor = (ref = options.editor === true) != null ? ref : {
-        on: false
+        _this.log('handleResize() is executed');
+        return _this.emit('change', [_this.data]);
       };
-      this.formHtml = options.form ? $(options.form) : $(Tagla.FORM_TEMPLATE);
-      this.formHtml = this.formHtml.html();
-      this.tagTemplate = options.tagTemplate ? $(options.tagTemplate).html() : Tagla.TAG_TEMPLATE;
-      this.unit = options.unit === 'percent' ? 'percent' : 'pixel';
-      this.imageSize = null;
-      this.image = this.wrapper.find('img');
-      return this.lastDragTime = new Date();
-    },
-    bind: function() {
-      this.log('bind() is executed');
-      return this.wrapper.on('mouseenter', $.proxy(this.handleMouseEnter, this)).on('click', $.proxy(this.handleWrapperClick, this)).on('click', '.tagla-tag-edit-link', $.proxy(this.handleTagEdit, this)).on('click', '.tagla-tag-delete-link', $.proxy(this.handleTagDelete, this)).on('mouseenter', '.tagla-tag', $.proxy(this.handleTagMouseEnter, this)).on('mouseleave', '.tagla-tag', $.proxy(this.handleTagMouseLeave, this));
-    },
-    render: function() {
-      this.log('render() is executed');
-      this.image.attr('draggable', false);
-      this.imageSize = Stackla.getImageSize(this.image, $.proxy(this.renderFn, this));
-      return this.imageSize.on('change', $.proxy(this.handleImageResize, this));
-    },
-    renderFn: function(success, data) {
-      var isSafari, j, len, ref, tag;
-      this.log('renderFn() is executed');
-      isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
-      if (!success) {
-        this.log("Failed to load image: " + (this.image.attr('src')), 'error');
-        this.destroy();
-        return;
-      }
-      this._updateImageSize(data);
-      this.wrapper.addClass('tagla');
-      if (isSafari) {
-        this.wrapper.addClass('tagla-safari');
-      }
-      ref = this.data;
-      for (j = 0, len = ref.length; j < len; j++) {
-        tag = ref[j];
-        this.addTag(tag);
-      }
-      return setTimeout((function(_this) {
-        return function() {
-          if (_this.editor) {
-            _this.wrapper.addClass('tagla-editing');
-          }
-          return _this.emit('ready', [_this]);
+    })(this));
+  };
+
+  ImageSize.prototype.render = function(callback) {
+    var img;
+    this.log('render() is executed');
+    if (this.complete) {
+      img = new Image();
+      img.src = this.el.src;
+      this.log("Image '" + this.el.src + "' is loaded");
+      this.data.naturalWidth = img.width;
+      this.data.naturalHeight = img.height;
+      return callback(true, this.data);
+    } else {
+      this.log("Image '" + this.el.src + "' is NOT ready");
+      img = new Image();
+      img.src = this.el.src;
+      img.onload = (function(_this) {
+        return function(e) {
+          _this.log("Image '" + img.src + "' is loaded");
+          _this.data.naturalWidth = img.width;
+          _this.data.naturalHeight = img.height;
+          return callback(true, _this.data);
         };
-      })(this), 500);
-    },
-    destroy: function() {
-      this.log('destroy() is executed');
-      this.wrapper.removeClass('tagla tagla-editing');
-      return this.wrapper.find('.tagla-tag').each(function() {
-        var $tag;
-        $tag = $(this);
-        $tag.find('.tagla-select').chosen2('destroy');
-        $tag.data('draggabilly').destroy();
-        return $tag.remove();
-      });
+      })(this);
+      return img.onerror = (function(_this) {
+        return function(e) {
+          _this.log("Image '" + img.src + "' is failed to load");
+          return callback(false, _this.data);
+        };
+      })(this);
     }
   };
 
-  $.extend(Tagla.prototype, proto);
+  return ImageSize;
 
-  if (!window.Stackla) {
-    window.Stackla = {};
+})(Base);
+
+if (!window.Stackla) {
+  window.Stackla = {};
+}
+
+Stackla.getImageSize = function(el, callback) {
+  return new ImageSize(el, callback);
+};
+
+module.exports = {
+  get: function(el, callback) {
+    return new ImageSize(el, callback);
+  }
+};
+
+
+
+},{"./base.coffee":2}],4:[function(require,module,exports){
+var ATTRS, Base, ImageSize, Mustache, Tagla, proto,
+  extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+Mustache = require('mustache');
+
+Base = require('./base.coffee');
+
+ImageSize = require('./image.coffee');
+
+ATTRS = {
+  NAME: 'Tagla',
+  PREFIX: 'tagla-',
+  DRAG_ATTR: {
+    containment: '.tagla',
+    handle: '.tagla-icon'
+  },
+  SELECT_ATTR: {
+    allow_single_deselect: true,
+    placeholder_text_single: 'Select an option',
+    width: '310px'
+  },
+  FORM_TEMPLATE: ['<div class="tagla-form-wrapper">', '    <form class="tagla-form">', '        <div class="tagla-form-title">', '            Select Your Product', '            <a href="javascript:void(0);" class="tagla-form-close">×</a>', '        </div>', '        <input type="hidden" name="x">', '        <input type="hidden" name="y">', '        <select data-placeholder="Search" type="text" name="tag" class="tagla-select chosen-select" placeholder="Search">', '            <option></option>', '            <option value="1">Cockie</option>', '            <option value="2">Kiwi</option>', '            <option value="3">Buddy</option>', '        </select>', '    </form>', '</div>'].join('\n'),
+  TAG_TEMPLATE: ['<div class="tagla-tag">', '    <i class="tagla-icon fs fs-tag2"></i>', '    <div class="tagla-dialog">', '    {{#product}}', '        {{#image_small_url}}', '        <div class="tagla-dialog-image">', '          <img src="{{image_small_url}}">', '        </div>', '        {{/image_small_url}}', '        <div class="tagla-dialog-text">', '          <div class="tagla-dialog-edit">', '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-edit-link">', '              <i class="fs fs-pencil"></i> Edit', '            </a>', '            <a href="javascript:void(0)" class="tagla-tag-link tagla-tag-delete-link">', '              <i class="fs fs-cross3"></i> Delete', '            </a>', '          </div>', '          <h2 class="tagla-dialog-title">{{tag}}</h2>', '          {{#price}}', '          <div class="tagla-dialog-price">{{price}}</div>', '          {{/price}}', '          {{#description}}', '          <p class="tagla-dialog-description">{{description}}</p>', '          {{/description}}', '          {{#custom_url}}', '          <a href="{{custom_url}}" class="tagla-dialog-button st-btn st-btn-success st-btn-solid" target=""{{target}}">', '            <i class="fs fs-cart"></i>', '            Buy Now', '          </a>', '          {{/custom_url}}', '        </div>', '    {{/product}}', '    </div>', '    {{{form_html}}}', '</div>'].join('\n'),
+  NEW_TAG_TEMPLATE: ['<div class="tagla-tag">', '    <i class="tagla-icon fs fs-tag2"></i>', '</div>'].join('\n')
+};
+
+Tagla = (function(superClass) {
+  extend(Tagla, superClass);
+
+  function Tagla($wrapper, options) {
+    if (options == null) {
+      options = {};
+    }
+    Tagla.__super__.constructor.call(this);
+    this.wrapper = $($wrapper);
+    this.init(options);
+    this.bind();
   }
 
-  window.Stackla.Tagla = Tagla;
+  return Tagla;
 
-}).call(this);
+})(Base);
+
+$.extend(Tagla, ATTRS);
+
+proto = {
+  toString: function() {
+    return 'Tagla';
+  },
+  _applyTools: function($tag) {
+    var $form, $select, drag, tag;
+    this.log('_applyTools() is executed');
+    drag = new Draggabilly($tag[0], Tagla.DRAG_ATTR);
+    drag.on('dragEnd', $.proxy(this.handleTagMove, this));
+    $tag.data('draggabilly', drag);
+    tag = $tag.data('tag-data');
+    $form = $tag.find('.tagla-form');
+    $form.find('[name=x]').val(tag.x);
+    $form.find('[name=y]').val(tag.y);
+    $form.find("[name=tag] option[value=" + tag.value + "]").attr('selected', 'selected');
+    $select = $tag.find('.tagla-select');
+    $select.chosen2(Tagla.SELECT_ATTR);
+    $select.on('change', $.proxy(this.handleTagChange, this));
+    return $select.on('chosen:hiding_dropdown', function(e, params) {
+      return $select.trigger('chosen:open');
+    });
+  },
+  _disableDrag: function($except) {
+    if (this.editor === false) {
+      return;
+    }
+    this.log('_disableDrag() is executed');
+    $except = $($except);
+    return $('.tagla-tag').each(function() {
+      if ($except[0] === this) {
+        return;
+      }
+      return $(this).data('draggabilly').disable();
+    });
+  },
+  _enableDrag: function($except) {
+    if (this.editor === false) {
+      return;
+    }
+    this.log('_enableDrag() is executed');
+    $except = $($except);
+    return $('.tagla-tag').each(function() {
+      if ($except[0] === this) {
+        return;
+      }
+      return $(this).data('draggabilly').enable();
+    });
+  },
+  _removeTools: function($tag) {
+    var $select;
+    $tag.data('draggabilly').destroy();
+    $select = $tag.find('.tagla-select');
+    $select.show().removeClass('chzn-done');
+    return $select.next().remove();
+  },
+  _getPosition: function($tag) {
+    var pos, x, y;
+    this.log('_getPosition() is executed');
+    pos = $tag.position();
+    x = (pos.left + ($tag.width() / 2)) / this.currentWidth * this.naturalWidth;
+    y = (pos.top + ($tag.height() / 2)) / this.currentHeight * this.naturalHeight;
+    if (this.unit === 'percent') {
+      x = x / this.naturalWidth * 100;
+      y = y / this.naturalHeight * 100;
+    }
+    return [x, y];
+  },
+  _updateImageSize: function(data) {
+    this.log('_updateImageSize() is executed');
+    this.naturalWidth = data.naturalWidth;
+    this.naturalHeight = data.naturalHeight;
+    this.currentWidth = data.width;
+    this.currentHeight = data.height;
+    this.widthRatio = data.widthRatio;
+    return this.heightRatio = data.heightRatio;
+  },
+  handleTagClick: function(e) {
+    var $tag;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!$(e.target).hasClass('tagla-icon')) {
+      return;
+    }
+    this.log('handleTagClick() is executed');
+    $tag = $(e.currentTarget);
+    this.shrink($tag);
+    $tag.addClass('tagla-tag-active');
+    return $tag.data('draggabilly').enable();
+  },
+  handleTagChange: function(e, params) {
+    var $select, $tag, data, isNew, serialize;
+    this.log('handleTagChange() is executed');
+    $select = $(e.target);
+    $tag = $select.parents('.tagla-tag');
+    isNew = $tag.hasClass('tagla-tag-new');
+    $tag.removeClass('tagla-tag-choose tagla-tag-active tagla-tag-new');
+    data = $.extend({}, $tag.data('tag-data'));
+    data.label = $select.find('option:selected').text();
+    data.value = $select.val() || data.label;
+    serialize = $tag.find('.tagla-form').serialize();
+    if (isNew) {
+      return this.emit('add', [data, serialize, $tag]);
+    } else {
+      return this.emit('change', [data, serialize, $tag]);
+    }
+  },
+  handleTagDelete: function(e) {
+    var $tag, data;
+    this.log('handleTagDelete() is executed');
+    e.preventDefault();
+    $tag = $(e.currentTarget).parents('.tagla-tag');
+    data = $.extend({}, $tag.data('tag-data'));
+    return $tag.fadeOut((function(_this) {
+      return function() {
+        _this._removeTools($tag);
+        $tag.remove();
+        return _this.emit('delete', [data]);
+      };
+    })(this));
+  },
+  handleTagEdit: function(e) {
+    var $tag, data;
+    this.log('handleTagEdit() is executed');
+    e.preventDefault();
+    e.stopPropagation();
+    $tag = $(e.currentTarget).parents('.tagla-tag');
+    $tag.addClass('tagla-tag-choose');
+    this.wrapper.addClass('tagla-editing-selecting');
+    this._disableDrag($tag);
+    $tag.find('.tagla-select').trigger('chosen:open');
+    data = $.extend({}, $tag.data('tag-data'));
+    return this.emit('edit', [data, $tag]);
+  },
+  handleTagMove: function(instance, event, pointer) {
+    var $form, $tag, data, isNew, pos, serialize;
+    this.log('handleTagMove() is executed');
+    $tag = $(instance.element);
+    data = $tag.data('tag-data');
+    pos = this._getPosition($tag);
+    data.x = pos[0];
+    data.y = pos[1];
+    $form = $tag.find('.tagla-form');
+    $form.find('[name=x]').val(data.x);
+    $form.find('[name=y]').val(data.y);
+    serialize = $tag.find('.tagla-form').serialize();
+    this.lastDragTime = new Date();
+    data = $.extend({}, data);
+    isNew = data.id ? false : true;
+    return this.emit('move', [data, serialize, $tag, isNew]);
+  },
+  handleTagMouseEnter: function(e) {
+    var $tag, timer;
+    this.log('handleTagMouseEnter');
+    $tag = $(e.currentTarget);
+    timer = $tag.data('timer');
+    if (timer) {
+      clearTimeout(timer);
+    }
+    $tag.removeData('timer');
+    $tag.addClass('tagla-tag-hover');
+    return this.emit('hover', [$tag]);
+  },
+  handleTagMouseLeave: function(e) {
+    var $tag, timer;
+    this.log('handleTagMouseLeave');
+    $tag = $(e.currentTarget);
+    timer = $tag.data('timer');
+    if (timer) {
+      clearTimeout(timer);
+    }
+    $tag.removeData('timer');
+    timer = setTimeout(function() {
+      return $tag.removeClass('tagla-tag-hover');
+    }, 300);
+    return $tag.data('timer', timer);
+  },
+  handleWrapperClick: function(e) {
+    this.log('handleWrapperClick() is executed');
+    if (new Date() - this.lastDragTime > 10) {
+      return this.shrink();
+    }
+  },
+  handleImageResize: function(e, data) {
+    var prevHeight, prevWidth;
+    this.log('handleImageResize() is executed');
+    prevWidth = this.currentWidth;
+    prevHeight = this.currentHeight;
+    $('.tagla-tag').each(function() {
+      var $tag, pos, x, y;
+      $tag = $(this);
+      pos = $tag.position();
+      x = (pos.left / prevWidth) * data.width;
+      y = (pos.top / prevHeight) * data.height;
+      return $tag.css({
+        left: x + "px",
+        top: y + "px"
+      });
+    });
+    return this._updateImageSize(data);
+  },
+  addTag: function(tag) {
+    var $tag, isNew, offsetX, offsetY, x, y;
+    if (tag == null) {
+      tag = {};
+    }
+    this.log('addTag() is executed');
+    tag = $.extend({}, tag);
+    tag.form_html = this.formHtml;
+    $tag = $(Mustache.render(this.tagTemplate, tag));
+    isNew = !tag.x && !tag.y;
+    if (isNew) {
+      $('.tagla-tag').each(function() {
+        if ($(this).hasClass('tagla-tag-new') && !$(this).find('[name=tag]').val()) {
+          return $(this).fadeOut((function(_this) {
+            return function() {
+              return _this._removeTools($tag);
+            };
+          })(this));
+        }
+      });
+    }
+    this.wrapper.append($tag);
+    if (isNew) {
+      tag.x = 50;
+      tag.y = 50;
+      $tag.addClass('tagla-tag-new tagla-tag-active tagla-tag-choose');
+    }
+    if (this.unit === 'percent') {
+      x = this.currentWidth * (tag.x / 100);
+      y = this.currentHeight * (tag.y / 100);
+    } else {
+      x = tag.x * this.widthRatio;
+      y = tag.y * this.heightRatio;
+    }
+    offsetX = $tag.outerWidth() / 2;
+    offsetY = $tag.outerHeight() / 2;
+    $tag.css({
+      'left': (x - offsetX) + "px",
+      'top': (y - offsetY) + "px"
+    });
+    $tag.data('tag-data', tag);
+    if (this.editor) {
+      this._applyTools($tag);
+      if (isNew) {
+        $tag.data('draggabilly').enable();
+        $tag.addClass('tagla-tag-choose');
+        return setTimeout((function(_this) {
+          return function() {
+            _this.wrapper.addClass('tagla-editing-selecting');
+            $tag.find('.tagla-select').trigger('chosen:open');
+            _this._disableDrag($tag);
+            return _this.emit('new', [$tag]);
+          };
+        })(this), 100);
+      }
+    }
+  },
+  deleteTag: function($tag) {
+    return this.log('deleteTag() is executed');
+  },
+  edit: function() {
+    if (this.editor === true) {
+      return;
+    }
+    this.log('edit() is executed');
+    this.wrapper.addClass('tagla-editing');
+    $('.tagla-tag').each(function() {
+      return this._applyTools($(this));
+    });
+    return this.editor = true;
+  },
+  getTags: function() {
+    var tags;
+    this.log('getTags() is executed');
+    tags = [];
+    $('.tagla-tag').each(function() {
+      var data;
+      data = $.extend({}, $(this).data('tag-data'));
+      return tags.push($(this).data('tag-data'));
+    });
+    return tags;
+  },
+  shrink: function($except) {
+    if ($except == null) {
+      $except = null;
+    }
+    if (this.editor === false) {
+      return;
+    }
+    this.log('shrink() is executed');
+    $except = $($except);
+    $('.tagla-tag').each((function(_this) {
+      return function(i, el) {
+        var $tag;
+        if ($except[0] === el) {
+          return;
+        }
+        $tag = $(el);
+        if ($tag.hasClass('tagla-tag-new') && !$tag.find('[name=tag]').val()) {
+          $tag.fadeOut(function() {
+            $tag.remove();
+            return _this._removeTools($tag);
+          });
+        }
+        return $tag.removeClass('tagla-tag-active tagla-tag-choose');
+      };
+    })(this));
+    this.wrapper.removeClass('tagla-editing-selecting');
+    return this._enableDrag();
+  },
+  updateDialog: function($tag, data) {
+    var html;
+    data = $.extend({}, $tag.data('tag-data'), data);
+    data.form_html = this.formHtml;
+    html = $(Mustache.render(this.tagTemplate, data)).find('.tagla-dialog').html();
+    $tag.find('.tagla-dialog').html(html);
+    return $tag.data('tag-data', data);
+  },
+  unedit: function() {
+    if (this.edit === false) {
+      return;
+    }
+    this.log('unedit() is executed');
+    $('.tagla-tag').each((function(_this) {
+      return function(i, el) {
+        return _this._removeTools($(el));
+      };
+    })(this));
+    this.wrapper.removeClass('tagla-editing');
+    return this.editor = false;
+  },
+  init: function(options) {
+    var ref;
+    this.data = options.data || [];
+    this.editor = (ref = options.editor === true) != null ? ref : {
+      on: false
+    };
+    this.formHtml = options.form ? $(options.form) : $(Tagla.FORM_TEMPLATE);
+    this.formHtml = this.formHtml.html();
+    this.tagTemplate = options.tagTemplate ? $(options.tagTemplate).html() : Tagla.TAG_TEMPLATE;
+    this.unit = options.unit === 'percent' ? 'percent' : 'pixel';
+    this.imageSize = null;
+    this.image = this.wrapper.find('img');
+    return this.lastDragTime = new Date();
+  },
+  bind: function() {
+    this.log('bind() is executed');
+    return this.wrapper.on('mouseenter', $.proxy(this.handleMouseEnter, this)).on('click', $.proxy(this.handleWrapperClick, this)).on('click', '.tagla-tag-edit-link', $.proxy(this.handleTagEdit, this)).on('click', '.tagla-tag-delete-link', $.proxy(this.handleTagDelete, this)).on('mouseenter', '.tagla-tag', $.proxy(this.handleTagMouseEnter, this)).on('mouseleave', '.tagla-tag', $.proxy(this.handleTagMouseLeave, this));
+  },
+  render: function() {
+    this.log('render() is executed');
+    this.image.attr('draggable', false);
+    this.imageSize = ImageSize.get(this.image, $.proxy(this.renderFn, this));
+    return this.imageSize.on('change', $.proxy(this.handleImageResize, this));
+  },
+  renderFn: function(success, data) {
+    var isSafari, j, len, ref, tag;
+    this.log('renderFn() is executed');
+    isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+    if (!success) {
+      this.log("Failed to load image: " + (this.image.attr('src')), 'error');
+      this.destroy();
+      return;
+    }
+    this._updateImageSize(data);
+    this.wrapper.addClass('tagla');
+    if (isSafari) {
+      this.wrapper.addClass('tagla-safari');
+    }
+    ref = this.data;
+    for (j = 0, len = ref.length; j < len; j++) {
+      tag = ref[j];
+      this.addTag(tag);
+    }
+    return setTimeout((function(_this) {
+      return function() {
+        if (_this.editor) {
+          _this.wrapper.addClass('tagla-editing');
+        }
+        return _this.emit('ready', [_this]);
+      };
+    })(this), 500);
+  },
+  destroy: function() {
+    this.log('destroy() is executed');
+    this.wrapper.removeClass('tagla tagla-editing');
+    return this.wrapper.find('.tagla-tag').each(function() {
+      var $tag;
+      $tag = $(this);
+      $tag.find('.tagla-select').chosen2('destroy');
+      $tag.data('draggabilly').destroy();
+      return $tag.remove();
+    });
+  }
+};
+
+$.extend(Tagla.prototype, proto);
+
+if (!window.Stackla) {
+  window.Stackla = {};
+}
+
+window.Stackla.Tagla = Tagla;
+
+module.exports = Tagla;
+
+
+
+},{"./base.coffee":2,"./image.coffee":3,"mustache":1}]},{},[4]);

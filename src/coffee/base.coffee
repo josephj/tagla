@@ -62,3 +62,6 @@ class Base
 # Promote to global
 window.Stackla = {} unless window.Stackla
 window.Stackla.Base = Base
+
+module.exports = Base
+
