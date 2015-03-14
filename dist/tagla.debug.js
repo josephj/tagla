@@ -1,3 +1,212 @@
+
+/*
+ * @class Stackla.Base
+ */
+
+(function() {
+  var Base;
+
+  Base = (function() {
+    function Base(options) {
+      var attrs, debug;
+      if (options == null) {
+        options = {};
+      }
+      debug = this.getParams('debug');
+      attrs = attrs || {};
+      if (debug) {
+        this.debug = debug === 'true' || debug === '1';
+      } else if (attrs.debug) {
+        this.debug = attrs.debug === true;
+      } else {
+        this.debug = false;
+      }
+      this._listeners = [];
+    }
+
+    Base.prototype.toString = function() {
+      return 'Base';
+    };
+
+    Base.prototype.log = function(msg, type) {
+      if (!this.debug) {
+        return;
+      }
+      type = type || 'info';
+      if (window.console && window.console[type]) {
+        window.console[type]("[" + (this.toString()) + "] " + msg);
+      }
+    };
+
+    Base.prototype.on = function(type, callback) {
+      if (!type || !callback) {
+        throw new Error('Both event type and callback are required parameters');
+      }
+      this.log('on() - event \'' + type + '\' is subscribed');
+      if (!this._listeners[type]) {
+        this._listeners[type] = [];
+      }
+      callback.instance = this;
+      this._listeners[type].push(callback);
+      return callback;
+    };
+
+    Base.prototype.emit = function(type, data) {
+      var i;
+      if (data == null) {
+        data = [];
+      }
+      this.log("emit() - event '" + type + "' is triggered");
+      data.unshift({
+        type: type,
+        target: this
+      });
+      if (!type) {
+        throw new Error('Lacks of type parameter');
+      }
+      if (this._listeners[type] && this._listeners[type].length) {
+        for (i in this._listeners[type]) {
+          this._listeners[type][i].apply(this, data);
+        }
+      }
+      return this;
+    };
+
+    Base.prototype.getParams = function(key) {
+      var hash, hashes, href, i, params, pos;
+      href = this.getUrl();
+      params = {};
+      pos = href.indexOf('?');
+      this.log('getParams() is executed');
+      if (href.indexOf('#') !== -1) {
+        hashes = href.slice(pos + 1, href.indexOf('#')).split('&');
+      } else {
+        hashes = href.slice(pos + 1).split('&');
+      }
+      for (i in hashes) {
+        hash = hashes[i].split('=');
+        params[hash[0]] = hash[1];
+      }
+      if (key) {
+        return params[key];
+      } else {
+        return params;
+      }
+    };
+
+    Base.prototype.getUrl = function() {
+      return window.location.href;
+    };
+
+    return Base;
+
+  })();
+
+  if (!window.Stackla) {
+    window.Stackla = {};
+  }
+
+  window.Stackla.Base = Base;
+
+}).call(this);
+
+//
+(function() {
+  var ImageSize,
+    extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    hasProp = {}.hasOwnProperty;
+
+  ImageSize = (function(superClass) {
+    extend(ImageSize, superClass);
+
+    function ImageSize(el, callback) {
+      ImageSize.__super__.constructor.call(this);
+      this.init(el);
+      this.bind();
+      this.render(callback);
+      return this;
+    }
+
+    ImageSize.prototype.toString = function() {
+      return 'ImageSize';
+    };
+
+    ImageSize.prototype.init = function(el) {
+      this.el = $(el)[0];
+      this.complete = this.el.complete;
+      this.data = {};
+      this._timer = null;
+      this.data.width = this.el.width;
+      return this.data.height = this.el.height;
+    };
+
+    ImageSize.prototype.bind = function() {
+      this.log('bind() is executed');
+      return $(window).resize((function(_this) {
+        return function(e) {
+          var isEqual;
+          isEqual = _this.el.width === _this.data.width && _this.el.height === _this.data.height;
+          if (isEqual) {
+            return;
+          }
+          $.extend(_this.data, {
+            width: _this.el.width,
+            height: _this.el.height,
+            widthRatio: _this.el.width / _this.data.naturalWidth,
+            heightRatio: _this.el.height / _this.data.naturalHeight
+          });
+          _this.log('handleResize() is executed');
+          return _this.emit('change', [_this.data]);
+        };
+      })(this));
+    };
+
+    ImageSize.prototype.render = function(callback) {
+      var img;
+      this.log('render() is executed');
+      if (this.complete) {
+        img = new Image();
+        img.src = this.el.src;
+        this.log("Image '" + this.el.src + "' is loaded");
+        this.data.naturalWidth = img.width;
+        this.data.naturalHeight = img.height;
+        return callback(true, this.data);
+      } else {
+        this.log("Image '" + this.el.src + "' is NOT ready");
+        img = new Image();
+        img.src = this.el.src;
+        img.onload = (function(_this) {
+          return function(e) {
+            _this.log("Image '" + img.src + "' is loaded");
+            _this.data.naturalWidth = img.width;
+            _this.data.naturalHeight = img.height;
+            return callback(true, _this.data);
+          };
+        })(this);
+        return img.onerror = (function(_this) {
+          return function(e) {
+            _this.log("Image '" + img.src + "' is failed to load");
+            return callback(false, _this.data);
+          };
+        })(this);
+      }
+    };
+
+    return ImageSize;
+
+  })(Stackla.Base);
+
+  if (!window.Stackla) {
+    window.Stackla = {};
+  }
+
+  Stackla.getImageSize = function(el, callback) {
+    return new ImageSize(el, callback);
+  };
+
+}).call(this);
+
+//
 (function() {
   var ATTRS, Tagla, proto,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -444,3 +653,7 @@
   window.Stackla.Tagla = Tagla;
 
 }).call(this);
+
+//
+
+//# sourceMappingURL=tagla.debug.js.map
