@@ -424,8 +424,12 @@ proto =
       $tag.remove()
 
 $.extend(Tagla::, proto)
-window.Stackla = {} unless window.Stackla
-window.Stackla.Tagla = Tagla
 
+if typeof exports is 'object' and exports # CommonJS
+  module.exports = Tagla
+else if typeof define is 'function' and define.amd # AMD
+  define(['exports'], Tagla)
 
-module.exports = Tagla
+# Vanilla JS
+window.Stackla.Tagla = Tagla if window.Stackla
+
