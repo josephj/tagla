@@ -76,6 +76,10 @@ gulp.task 'build', ->
     .pipe concat('tagla.min.js')
     .pipe uglify()
     .pipe gulp.dest(OUTPUT_PATH)
+  gulp.src COFFEE_PATH
+    .pipe coffee().on('error', (err) -> console.log(err.message))
+    .pipe concat('tagla.debug.js')
+    .pipe gulp.dest(OUTPUT_PATH)
 
 
 gulp.task 'default', ['build', 'connect', 'open', 'watch']
