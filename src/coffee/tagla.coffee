@@ -1,3 +1,7 @@
+Mustache = require('mustache')
+Base = require('./base.coffee')
+ImageSize = require('./image.coffee')
+
 ATTRS =
   NAME: 'Tagla'
   PREFIX: 'tagla-'
@@ -70,7 +74,7 @@ ATTRS =
     '</div>'
   ].join('\n')
 
-class Tagla extends Stackla.Base
+class Tagla extends Base
   constructor: ($wrapper, options = {}) ->
     super()
     @wrapper = $($wrapper)
@@ -390,7 +394,7 @@ proto =
   render: ->
     @log 'render() is executed'
     @image.attr('draggable', false)
-    @imageSize = Stackla.getImageSize(@image, $.proxy(@renderFn, @))
+    @imageSize = ImageSize.get(@image, $.proxy(@renderFn, @))
     @imageSize.on('change', $.proxy(@handleImageResize, @))
 
   renderFn: (success, data) ->
@@ -423,3 +427,5 @@ $.extend(Tagla::, proto)
 window.Stackla = {} unless window.Stackla
 window.Stackla.Tagla = Tagla
 
+
+module.exports = Tagla

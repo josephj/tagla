@@ -1,4 +1,6 @@
-class ImageSize extends Stackla.Base
+Base = require('./base.coffee')
+
+class ImageSize extends Base
 
   constructor: (el, callback) ->
     super()
@@ -58,6 +60,10 @@ class ImageSize extends Stackla.Base
 
 
 window.Stackla = {} unless window.Stackla
-
 Stackla.getImageSize = (el, callback) ->
   new ImageSize(el, callback)
+
+module.exports =
+  get: (el, callback) ->
+    new ImageSize(el, callback)
+
