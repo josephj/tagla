@@ -1,6 +1,7 @@
 Mustache = require('mustache')
 Base = require('./base.coffee')
 ImageSize = require('./image.coffee')
+AlignMe = require('alignme')
 
 ATTRS =
   NAME: 'Tagla'
@@ -174,6 +175,9 @@ proto =
     data.label = $select.find('option:selected').text()
     data.value = $select.val() || data.label
     serialize = $tag.find('.tagla-form').serialize()
+    # Align
+    $tag.data('align-dialog').align()
+    $tag.data('align-form').align()
     if isNew
       @emit('add', [data, serialize, $tag])
     else
@@ -218,6 +222,9 @@ proto =
     @lastDragTime = new Date()
     data = $.extend({}, data)
     isNew = if data.id then no else yes
+    # Align
+    $tag.data('align-form').align()
+    $tag.data('align-dialog').align()
     @emit('move', [data, serialize, $tag, isNew])
 
   handleTagMouseEnter: (e) ->
@@ -230,6 +237,9 @@ proto =
     $tag.removeData('timer')
 
     $tag.addClass('tagla-tag-hover')
+    # Align
+    $tag.data('align-dialog').align()
+    $tag.data('align-form').align()
     @emit('hover', [$tag])
 
   handleTagMouseLeave: (e) ->
@@ -303,6 +313,19 @@ proto =
       'top': "#{y - offsetY}px"
     # Save tag data to data attr for easy access
     $tag.data('tag-data', tag)
+
+    # AlignMe
+    $dialog = $tag.find('.tagla-dialog')
+    $form = $tag.find('.tagla-form')
+    attrs =
+      relateTo: $tag
+      constrainBy: @wrapper
+      skipViewport: false
+    $tag.data('align-dialog', new AlignMe($dialog, attrs))
+    $tag.data('align-form', new AlignMe($form, attrs))
+    $tag.data('align-dialog').align()
+    $tag.data('align-form').align()
+
     # Render tag editor tools
     if @editor
       @_applyTools($tag)

@@ -11,6 +11,7 @@
   "author": "josephj <josephj6802@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "alignme": "latest",
     "mustache": "^1.1.0"
   },
   "devDependencies": {
