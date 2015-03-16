@@ -37,6 +37,9 @@ module.exports = function (grunt) {
                 dest: DIST_PATH + 'tagla.debug.js'
             },
             build: {
+                options: {
+                     browserifyOptions: {standalone: 'Tagla'}
+                },
                 src: COFFEE_PATH + 'tagla.coffee',
                 dest: DIST_PATH + 'tagla.js'
             }

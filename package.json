@@ -12,7 +12,7 @@
   "license": "MIT",
   "main": "src/coffee/tagla.coffee",
   "dependencies": {
-    "alignme": "0.0.9",
+    "alignme": "0.0.11",
     "mustache": "^1.1.0"
   },
   "devDependencies": {

@@ -1,9 +1,6 @@
 // DON'T MODIFY THIS FILE!
 // MODIFY ITS SOURCE FILE!
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-module.exports = exports = require('./src/js/alignme.js');
-
-},{"./src/js/alignme.js":2}],2:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Tagla = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /*global window, $, define, document */
 /**
  * A JavaScript utility which automatically aligns position of an overlay.
@@ -211,7 +208,7 @@ if (window.Stackla) { // Vanilla JS
 module.exports = AlignMe;
 
 
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 /*!
  * mustache.js - Logic-less {{mustache}} templates with JavaScript
  * http://github.com/janl/mustache.js
@@ -798,7 +795,7 @@ module.exports = AlignMe;
 
 }));
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 
 /*
  * @class Stackla.Base
@@ -911,7 +908,7 @@ module.exports = Base;
 
 
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var Base, ImageSize,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1014,7 +1011,7 @@ module.exports = {
 
 
 
-},{"./base.coffee":4}],6:[function(require,module,exports){
+},{"./base.coffee":3}],5:[function(require,module,exports){
 var ATTRS, AlignMe, Base, ImageSize, Mustache, Tagla, proto,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1484,4 +1481,5 @@ if (window.Stackla) {
 
 
 
-},{"./base.coffee":4,"./image.coffee":5,"alignme":1,"mustache":3}]},{},[6]);
+},{"./base.coffee":3,"./image.coffee":4,"alignme":1,"mustache":2}]},{},[5])(5)
+});
