@@ -1,7 +1,7 @@
 Mustache = require('mustache')
 AlignMe = require('alignme')
-Base = require('./base.coffee')
-ImageSize = require('./image.coffee')
+Base = require('./base')
+ImageSize = require('./image')
 
 ATTRS =
   NAME: 'Tagla'
