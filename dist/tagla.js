@@ -1478,14 +1478,14 @@ proto = {
 
 $.extend(Tagla.prototype, proto);
 
+if (window.Stackla) {
+  window.Stackla.Tagla = Tagla;
+}
+
 if (typeof exports === 'object' && exports) {
   module.exports = Tagla;
 } else if (typeof define === 'function' && define.amd) {
   define(['exports'], Tagla);
-}
-
-if (window.Stackla) {
-  window.Stackla.Tagla = Tagla;
 }
 
 

@@ -448,11 +448,11 @@ proto =
 
 $.extend(Tagla::, proto)
 
+# Vanilla JS
+window.Stackla.Tagla = Tagla if window.Stackla
+
 if typeof exports is 'object' and exports # CommonJS
   module.exports = Tagla
 else if typeof define is 'function' and define.amd # AMD
   define(['exports'], Tagla)
-
-# Vanilla JS
-window.Stackla.Tagla = Tagla if window.Stackla
 
