@@ -1,6 +1,6 @@
 {
   "name": "tagla",
-  "version": "0.0.6",
+  "version": "0.0.9",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,7 +10,7 @@
   },
   "author": "josephj <josephj6802@gmail.com>",
   "license": "MIT",
-  "main": "src/coffee/tagla.coffee",
+  "main": "src/coffee/tagla.js",
   "dependencies": {
     "alignme": "0.0.11",
     "mustache": "^1.1.0"

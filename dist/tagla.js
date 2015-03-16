@@ -1018,11 +1018,11 @@ var ATTRS, AlignMe, Base, ImageSize, Mustache, Tagla, proto,
 
 Mustache = require('mustache');
 
+AlignMe = require('alignme');
+
 Base = require('./base.coffee');
 
 ImageSize = require('./image.coffee');
-
-AlignMe = require('alignme');
 
 ATTRS = {
   NAME: 'Tagla',
