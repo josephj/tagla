@@ -1482,12 +1482,6 @@ if (window.Stackla) {
   window.Stackla.Tagla = Tagla;
 }
 
-if (typeof exports === 'object' && exports) {
-  module.exports = Tagla;
-} else if (typeof define === 'function' && define.amd) {
-  define(['exports'], Tagla);
-}
-
 
 
 },{"./base.coffee":4,"./image.coffee":5,"alignme":1,"mustache":3}]},{},[6]);
