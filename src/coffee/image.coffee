@@ -1,4 +1,4 @@
-Base = require('./base.coffee')
+Base = require('./base')
 
 class ImageSize extends Base
 

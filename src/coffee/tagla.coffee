@@ -1,7 +1,7 @@
 Mustache = require('mustache')
 AlignMe = require('alignme')
-Base = require('./base')
-ImageSize = require('./image')
+Base = require('./base.coffee')
+ImageSize = require('./image.coffee')
 
 ATTRS =
   NAME: 'Tagla'
@@ -449,10 +449,11 @@ proto =
 $.extend(Tagla::, proto)
 
 # Vanilla JS
+window.Tagla = Tagla
 window.Stackla.Tagla = Tagla if window.Stackla
 
-#if typeof exports is 'object' and exports # CommonJS
-  #module.exports = Tagla
-#else if typeof define is 'function' and define.amd # AMD
-  #define(['exports'], Tagla)
+if typeof exports is 'object' and exports # CommonJS
+  module.exports = Tagla
+else if typeof define is 'function' and define.amd # AMD
+  define(['exports'], Tagla)
 

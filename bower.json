@@ -1,7 +1,7 @@
 {
   "name": "tagla",
   "main": "src/tagla.js",
-  "version": "0.0.1",
+  "version": "0.0.19",
   "homepage": "https://github.com/josephj/tagla",
   "authors": [
     "josephj <josephj6802@gmail.com>"
