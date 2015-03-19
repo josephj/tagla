@@ -1,6 +1,6 @@
 tagla
 -----
-Awesome Photo Tagging library for Stackla
+Awesome Photo Tagging library
 
 
 ## Installation
