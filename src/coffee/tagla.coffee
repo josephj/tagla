@@ -58,7 +58,7 @@ ATTRS =
     '          <p class="tagla-dialog-description">{{description}}</p>'
     '          {{/description}}'
     '          {{#custom_url}}'
-    '          <a href="{{custom_url}}" class="tagla-dialog-button st-btn st-btn-success st-btn-solid" target="{{target}}">'
+    '          <a href="{{custom_url}}" class="tagla-dialog-button st-btn st-btn-success st-btn-solid" target="_blank">'
     '            <i class="fs fs-cart"></i>'
     '            Buy Now'
     '          </a>'
