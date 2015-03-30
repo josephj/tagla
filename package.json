@@ -1,6 +1,6 @@
 {
   "name": "tagla",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "node_modules/.bin/coffee -co lib src/coffee"
@@ -13,7 +13,7 @@
   "license": "MIT",
   "main": "lib/tagla.js",
   "dependencies": {
-    "alignme": "0.0.15",
+    "alignme": "0.0.17",
     "mustache": "^1.1.0"
   },
   "devDependencies": {
